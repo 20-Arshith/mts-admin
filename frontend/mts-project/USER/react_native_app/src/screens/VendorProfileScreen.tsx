@@ -24,6 +24,8 @@ const REEL_GRID_PADDING = 8;
 const REEL_GRID_GAP = 4;
 const REEL_TILE_WIDTH = (width - REEL_GRID_PADDING * 2 - REEL_GRID_GAP * 2) / 3;
 const REEL_TILE_HEIGHT = REEL_TILE_WIDTH * (16 / 9);
+const PHOTO_GRID_GAP = 3;
+const PHOTO_TILE_WIDTH = (width - PHOTO_GRID_GAP * 2) / 3;
 
 const formatCompactCount = (value: any) => {
   const numeric = Number(value);
@@ -47,6 +49,8 @@ const formatCompactCount = (value: any) => {
 const getReelViewCount = (reel: any) =>
   reel?.view_count ?? reel?.views ?? reel?.viewCount ?? reel?.watch_count ?? reel?.watchCount ?? 0;
 
+const getReelId = (reel: any) => reel?.id ?? reel?.reel_id ?? reel?.reelId;
+
 const getReelThumbnail = (reel: any) =>
   reel?.thumbnail_url || reel?.thumbnailUrl || reel?.cover_url || reel?.coverUrl || '';
 
@@ -56,7 +60,7 @@ const getReelVideoUrl = (reel: any) =>
 const getReelTitle = (reel: any, fallback = 'Service reel') =>
   reel?.caption || reel?.title || reel?.description || fallback;
 
-const ReelPlayerItem = ({ reel, vendorName, isActive, onClose, isMuted, setIsMuted, height, width }: any) => {
+const ReelPlayerItem = ({ reel, vendorName, isActive, onClose, onView, isMuted, setIsMuted, height, width }: any) => {
   const videoUrl = getReelVideoUrl(reel);
   const thumbnail = getReelThumbnail(reel);
   const title = getReelTitle(reel, `${vendorName} reel`);
@@ -77,10 +81,11 @@ const ReelPlayerItem = ({ reel, vendorName, isActive, onClose, isMuted, setIsMut
   useEffect(() => {
     if (isActive && videoUrl) {
       player.play();
+      onView?.(reel);
     } else {
       player.pause();
     }
-  }, [isActive, videoUrl, player]);
+  }, [isActive, onView, reel, videoUrl, player]);
 
   return (
     <View style={{ width, height, backgroundColor: '#05070D' }}>
@@ -192,11 +197,13 @@ const ReelViewerModal = ({
   initialIndex,
   vendorName,
   onClose,
+  onReelView,
 }: {
   reels: any[];
   initialIndex: number;
   vendorName: string;
   onClose: () => void;
+  onReelView: (reel: any) => void;
 }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -224,6 +231,7 @@ const ReelViewerModal = ({
               vendorName={vendorName}
               isActive={currentIndex === index}
               onClose={onClose}
+              onView={onReelView}
               isMuted={isMuted}
               setIsMuted={setIsMuted}
               height={height}
@@ -264,6 +272,7 @@ const VendorProfileScreen = ({ navigation, route }) => {
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [selectedReelIndex, setSelectedReelIndex] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'services' | 'gallery' | 'reels'>('services');
+  const viewedReelIds = useRef(new Set<string>());
   const [vendorDetails, setVendorDetails] = useState({
     vendorName: initialVendorName,
     rating: Number(initialRating),
@@ -391,8 +400,52 @@ const VendorProfileScreen = ({ navigation, route }) => {
     setGalleryImages(images.filter(Boolean));
   };
 
+  const vendorPortfolioImages = useMemo(
+    () => (vendorDetails.gallery || [])
+      .map((item: any) => (typeof item === 'string' ? item : item?.image_url))
+      .filter(Boolean),
+    [vendorDetails.gallery]
+  );
+
   const closeServiceGallery = () => {
     setGalleryImages([]);
+  };
+
+  const handleReelView = async (reel: any) => {
+    const reelId = getReelId(reel);
+    if (!reelId) {
+      return;
+    }
+
+    const key = String(reelId);
+    if (viewedReelIds.current.has(key)) {
+      return;
+    }
+
+    viewedReelIds.current.add(key);
+
+    try {
+      const response = await api.post(`/reels/${reelId}/view`);
+      const previousCount = Number(getReelViewCount(reel)) || 0;
+      const returnedCount = Number(
+        response.data?.data?.view_count ??
+        response.data?.data?.views ??
+        response.data?.view_count ??
+        response.data?.views
+      );
+      const nextCount = Number.isFinite(returnedCount) ? returnedCount : previousCount + 1;
+
+      setVendorDetails((current: any) => ({
+        ...current,
+        reels: (current.reels || []).map((item: any) =>
+          String(getReelId(item)) === key
+            ? { ...item, view_count: nextCount, views: nextCount, viewCount: nextCount }
+            : item
+        ),
+      }));
+    } catch (error) {
+      console.warn('Failed to update reel view count:', error);
+    }
   };
 
   if (!loading && notAvailable) {
@@ -486,6 +539,13 @@ const VendorProfileScreen = ({ navigation, route }) => {
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={{ flex: 1, alignItems: 'center', paddingVertical: 14, borderBottomWidth: 2, borderBottomColor: activeTab === 'gallery' ? '#111827' : 'transparent' }}
+            onPress={() => setActiveTab('gallery')}
+          >
+            <Ionicons name="grid-outline" size={25} color={activeTab === 'gallery' ? '#111827' : '#9CA3AF'} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={{ flex: 1, alignItems: 'center', paddingVertical: 14, borderBottomWidth: 2, borderBottomColor: activeTab === 'reels' ? '#111827' : 'transparent' }}
             onPress={() => setActiveTab('reels')}
           >
@@ -560,6 +620,63 @@ const VendorProfileScreen = ({ navigation, route }) => {
                     </View>
                   </View>
                 ))
+              )}
+            </View>
+          )}
+
+
+          {activeTab === 'gallery' && (
+            <View style={{ backgroundColor: '#FFFFFF', paddingTop: PHOTO_GRID_GAP, paddingBottom: 24 }}>
+              {vendorPortfolioImages.length > 0 ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                  {vendorPortfolioImages.map((imageUrl: string, index: number) => (
+                    <TouchableOpacity
+                      key={`${imageUrl}-${index}`}
+                      activeOpacity={0.9}
+                      onPress={() => openServiceGallery(vendorPortfolioImages)}
+                      style={{
+                        width: PHOTO_TILE_WIDTH,
+                        height: PHOTO_TILE_WIDTH,
+                        marginRight: index % 3 === 2 ? 0 : PHOTO_GRID_GAP,
+                        marginBottom: PHOTO_GRID_GAP,
+                        backgroundColor: '#E5E7EB',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      <View
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundColor: 'rgba(0,0,0,0.03)',
+                        }}
+                      />
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          backgroundColor: 'rgba(0,0,0,0.34)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons name="images-outline" size={14} color="#FFFFFF" />
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={{ width: '100%', alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24, backgroundColor: '#FFFFFF' }}>
+                  <Ionicons name="images-outline" size={48} color="#CBD5E1" />
+                  <Text style={{ color: '#111827', marginTop: 12, fontSize: 15, fontWeight: '800' }}>No portfolio photos yet</Text>
+                  <Text style={{ color: '#6B7280', marginTop: 5, fontSize: 13, textAlign: 'center', lineHeight: 18 }}>
+                    Photos uploaded by this vendor will appear here.
+                  </Text>
+                </View>
               )}
             </View>
           )}
@@ -675,6 +792,7 @@ const VendorProfileScreen = ({ navigation, route }) => {
           initialIndex={selectedReelIndex}
           vendorName={vendorDetails.vendorName}
           onClose={() => setSelectedReelIndex(null)}
+          onReelView={handleReelView}
         />
       ) : null}
 

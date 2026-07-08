@@ -19,6 +19,10 @@
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "VIBRATE"
+      ],
       "package": "com.charanwudaru.react_native_app"
     },
     "web": {
@@ -39,6 +43,15 @@
     "plugins": [
       "expo-font",
       "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#007BFF",
+          "defaultChannel": "mts-default",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ],
       "./plugins/withAndroidHttpSupport"
     ]
   }

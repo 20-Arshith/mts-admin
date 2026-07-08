@@ -64,6 +64,17 @@ class ReelRepository extends BaseRepository {
             where: { vendor_id: vendorId },
         });
     }
+
+    async incrementViewCount(reelId) {
+        return await this.model.update({
+            where: { id: reelId },
+            data: {
+                view_count: {
+                    increment: 1,
+                },
+            },
+        });
+    }
 }
 
 module.exports = new ReelRepository();

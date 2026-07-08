@@ -9,7 +9,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { vendorService, uploadService } from '../../services/api';
 
 const { width } = Dimensions.get('window');
-const THUMB_SIZE = (width - 48) / 3;
+const CARD_WIDTH = (width - 44) / 2;
+const CARD_IMAGE_HEIGHT = Math.round(CARD_WIDTH * 0.9);
 
 type GalleryItem = { id: number; image_url: string; caption?: string; created_at: string };
 
@@ -53,7 +54,11 @@ export default function GalleryScreen() {
         }
     }, []);
 
-    useFocusEffect(fetchGallery);
+    useFocusEffect(
+        useCallback(() => {
+            fetchGallery();
+        }, [fetchGallery])
+    );
 
     const pickAndUpload = async () => {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -114,12 +119,10 @@ export default function GalleryScreen() {
     };
 
     const renderItem = ({ item }: { item: GalleryItem }) => (
-        <View style={styles.thumb}>
-            <Image source={{ uri: item.image_url }} style={styles.thumbImg} resizeMode="cover" />
+        <View style={styles.photoCard}>
+            <Image source={{ uri: item.image_url }} style={styles.photoImage} resizeMode="cover" />
             {item.caption ? (
-                <View style={styles.captionBadge}>
-                    <Text style={styles.captionText} numberOfLines={1}>{item.caption}</Text>
-                </View>
+                <Text style={styles.photoCaption} numberOfLines={2}>{item.caption}</Text>
             ) : null}
             <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(item)}>
                 <MaterialCommunityIcons name="trash-can" size={16} color="#fff" />
@@ -129,14 +132,13 @@ export default function GalleryScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 14 }}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color="#1E293B" />
                 </TouchableOpacity>
                 <View style={{ flex: 1 }}>
                     <Text style={styles.headerTitle}>Portfolio Gallery</Text>
-                    <Text style={styles.headerSubtitle}>Showcase your best work</Text>
+                    <Text style={styles.headerSubtitle}>Photos customers will see on your profile</Text>
                 </View>
                 <TouchableOpacity
                     onPress={pickAndUpload}
@@ -149,10 +151,9 @@ export default function GalleryScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Stats bar */}
             <View style={styles.statsBar}>
                 <MaterialCommunityIcons name="image-multiple-outline" size={18} color="#006AE8" />
-                <Text style={styles.statsText}>{items.length} / 30 images uploaded</Text>
+                <Text style={styles.statsText}>{items.length} photos uploaded</Text>
             </View>
 
             {/* Body */}
@@ -177,8 +178,9 @@ export default function GalleryScreen() {
                     data={items}
                     renderItem={renderItem}
                     keyExtractor={(it) => String(it.id)}
-                    numColumns={3}
+                    numColumns={2}
                     contentContainerStyle={styles.grid}
+                    columnWrapperStyle={styles.gridRow}
                     showsVerticalScrollIndicator={false}
                     ListFooterComponent={
                         <TouchableOpacity style={styles.addMoreBtn} onPress={pickAndUpload} disabled={uploading}>
@@ -227,14 +229,25 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFC' },
     header: {
-        backgroundColor: '#006AE8',
-        paddingTop: 56, paddingBottom: 20, paddingHorizontal: 20,
+        backgroundColor: '#FFFFFF',
+        paddingTop: 56, paddingBottom: 18, paddingHorizontal: 18,
         flexDirection: 'row', alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E2E8F0',
     },
-    headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
-    headerSubtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+        backgroundColor: '#F1F5F9',
+    },
+    headerTitle: { color: '#0F172A', fontSize: 20, fontWeight: '800' },
+    headerSubtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
     addBtn: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: '#006AE8',
         width: 40, height: 40, borderRadius: 20,
         alignItems: 'center', justifyContent: 'center',
     },
@@ -256,20 +269,26 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
     },
     uploadCtaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-    grid: { padding: 12 },
-    thumb: {
-        width: THUMB_SIZE, height: THUMB_SIZE,
-        margin: 3, borderRadius: 10, overflow: 'hidden',
-        backgroundColor: '#E2E8F0',
+    grid: { padding: 14, paddingBottom: 28 },
+    gridRow: { justifyContent: 'space-between' },
+    photoCard: {
+        width: CARD_WIDTH,
+        marginBottom: 14,
+        borderRadius: 14,
+        overflow: 'hidden',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
     },
-    thumbImg: { width: '100%', height: '100%' },
-    captionBadge: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 6, paddingVertical: 3,
-    },
-    captionText: { color: '#fff', fontSize: 10 },
+    photoImage: { width: '100%', height: CARD_IMAGE_HEIGHT, backgroundColor: '#E2E8F0' },
+    photoCaption: { color: '#334155', fontSize: 12, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 9, lineHeight: 16 },
     deleteBtn: {
-        position: 'absolute', top: 4, right: 4,
+        position: 'absolute', top: 8, right: 8,
         backgroundColor: 'rgba(239,68,68,0.85)',
         borderRadius: 12, padding: 4,
     },

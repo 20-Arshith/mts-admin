@@ -37,7 +37,7 @@ export default function NotificationsScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()} className="mr-3">
                     <MaterialCommunityIcons name="arrow-left" size={24} color="#0F172A" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-textPrimary">Notifications</Text>
+                <Text className="text-xl font-bold text-textPrimary">Updates</Text>
             </View>
 
             {loading ? (
@@ -73,7 +73,7 @@ export default function NotificationsScreen() {
                     ListEmptyComponent={
                         <View className="pt-20 items-center">
                             <MaterialCommunityIcons name="bell-outline" size={42} color="#93C5FD" />
-                            <Text className="mt-3 text-base font-semibold text-textPrimary">No notifications yet</Text>
+                            <Text className="mt-3 text-base font-semibold text-textPrimary">No updates yet</Text>
                         </View>
                     }
                 />

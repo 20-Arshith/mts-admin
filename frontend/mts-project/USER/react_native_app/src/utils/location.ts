@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { Platform } from 'react-native';
-import api from './api';
+import api, { getStoredUserToken } from './api';
 
 const joinLocationParts = (parts: Array<string | null | undefined>) =>
   parts
@@ -205,6 +205,11 @@ export const syncUserLocation = async (location: {
   address: string;
 }) => {
   try {
+    const token = await getStoredUserToken();
+    if (!token) {
+      return;
+    }
+
     await api.put('/users/profile', {
       latitude: location.latitude,
       longitude: location.longitude,

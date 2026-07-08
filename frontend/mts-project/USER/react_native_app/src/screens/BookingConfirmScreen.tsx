@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { getServiceMeta } from '../utils/serviceHelpers';
-import { API_BASE, STORAGE_KEYS } from '../utils/config';
 import api from '../utils/api';
 import { detectCurrentLocation, looksLikeCoordinateAddress, syncUserLocation } from '../utils/location';
 
@@ -80,7 +79,7 @@ const BookingConfirmScreen = ({ navigation, route }: any) => {
     preloadAddress();
   }, []);
 
-  const displayServices = services.length > 0 ? services : [
+  const displayServices = preselectedService ? [preselectedService] : services.length > 0 ? services : [
     { name: `${vendorType} - Basic`, price: 499, duration: '1-2 hrs', description: 'Essential service for quick needs.' },
     { name: `${vendorType} - Standard`, price: 999, duration: '2-3 hrs', description: 'Most popular, thorough coverage.' },
     { name: `${vendorType} - Premium`, price: 1799, duration: '3-5 hrs', description: 'Comprehensive full-service package.' },
@@ -163,33 +162,17 @@ const BookingConfirmScreen = ({ navigation, route }: any) => {
 
     setLoading(true);
     try {
-      const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-      const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
-      if (!token) {
-        Alert.alert('Error', 'You must be logged in to book a service');
-        setLoading(false);
-        return;
-      }
-
       const totalPrice = typeof selectedService?.price === 'number' ? selectedService.price : Number(selectedService?.price) || 0;
       const scheduledAt = `${selectedDate}T${selectedTime}:00`;
 
-      const res = await fetch(`${API_BASE}/bookings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          vendor_service_id: Number(vendorServiceId),
-          scheduled_at: scheduledAt,
-          address,
-          total_price: totalPrice,
-        }),
+      const res = await api.post('/bookings', {
+        vendor_service_id: Number(vendorServiceId),
+        scheduled_at: scheduledAt,
+        address,
+        total_price: totalPrice,
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to book');
+      if (!res.data?.success) throw new Error(res.data?.message || 'Failed to book');
 
       setIsBooked(true);
     } catch (e: any) {

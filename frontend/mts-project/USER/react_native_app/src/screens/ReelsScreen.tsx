@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,33 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import api from '../utils/api';
 
 const REELS_PAGE_SIZE = 6;
+
+const getReelVideoUrl = (reel: any) =>
+  reel?.video_url || reel?.videoUrl || reel?.url || reel?.media_url || reel?.mediaUrl || '';
+
+const getReelId = (reel: any) => reel?.id ?? reel?.reel_id ?? reel?.reelId;
+
+const getReelViewCount = (reel: any) =>
+  reel?.view_count ?? reel?.views ?? reel?.viewCount ?? reel?.watch_count ?? reel?.watchCount ?? 0;
+
+const formatCompactCount = (value: any) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return '0';
+  }
+
+  if (numeric >= 1000000) {
+    const compact = numeric / 1000000;
+    return `${compact % 1 === 0 ? compact.toFixed(0) : compact.toFixed(1)}M`;
+  }
+
+  if (numeric >= 1000) {
+    const compact = numeric / 1000;
+    return `${compact % 1 === 0 ? compact.toFixed(0) : compact.toFixed(1)}K`;
+  }
+
+  return String(Math.round(numeric));
+};
 
 const mergeUniqueReels = (current: any[], incoming: any[]) => {
   const seen = new Set(current.map((item) => String(item.id)));
@@ -40,6 +67,8 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   height,
   navigation,
   onShare,
+  onView,
+  onClose,
 }: {
   reel: any;
   isActive: boolean;
@@ -47,6 +76,8 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   height: number;
   navigation: any;
   onShare: (reel: any) => void;
+  onView?: (reel: any) => void;
+  onClose?: () => void;
 }) {
   const [isMuted, setIsMuted] = useState(true);
 
@@ -55,7 +86,7 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   const description = reel.caption || 'Watch this service reel on MTS India';
 
   const player = useVideoPlayer(
-    { uri: reel.video_url },
+    { uri: getReelVideoUrl(reel) },
     (videoPlayer) => {
       videoPlayer.loop = true;
       videoPlayer.muted = true;
@@ -70,11 +101,12 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   useEffect(() => {
     if (isActive && isScreenFocused) {
       player.play();
+      onView?.(reel);
       return;
     }
 
     player.pause();
-  }, [isActive, isScreenFocused, player]);
+  }, [isActive, isScreenFocused, onView, player, reel]);
 
   const openVendorProfile = () => {
     navigation.navigate('VendorProfile', {
@@ -110,12 +142,31 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
           left: 0,
           right: 0,
           paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 16 : 54,
-          paddingHorizontal: 16,
+          paddingHorizontal: 12,
           paddingBottom: 24,
           backgroundColor: 'transparent',
+          flexDirection: 'row',
+          alignItems: 'center',
         }}
       >
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }} onPress={openVendorProfile}>
+        {onClose ? (
+          <TouchableOpacity
+            onPress={onClose}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: 'rgba(0,0,0,0.42)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 10,
+            }}
+          >
+            <Ionicons name="chevron-down" size={26} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : null}
+
+        <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={openVendorProfile}>
           <View
             style={{
               width: 42,
@@ -176,6 +227,13 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
         >
           {description}
         </Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+          <Ionicons name="play" size={15} color="rgba(255,255,255,0.9)" />
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '700', marginLeft: 6 }}>
+            {formatCompactCount(getReelViewCount(reel))} views
+          </Text>
+        </View>
 
         <TouchableOpacity
           style={{
@@ -241,6 +299,7 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 });
+  const viewedReelIds = useRef(new Set<string>());
 
   const fetchReels = useCallback(async ({ pageToLoad = 1, append = false } = {}) => {
     if (append) {
@@ -284,25 +343,61 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
     fetchReels({ pageToLoad: page + 1, append: true });
   }, [fetchReels, hasMore, loading, loadingMore, page]);
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
-    const firstVisible = viewableItems.find((item) => typeof item.index === 'number');
-    if (typeof firstVisible?.index === 'number') {
-      setCurrentPage(firstVisible.index);
-    }
-  });
-
   const handleShare = async (reel: any) => {
     const vendorName = reel.vendor?.business_name || reel.vendor?.user?.full_name || 'Vendor';
     const serviceName = reel.vendor?.category?.category_name || reel.caption || 'service';
 
     try {
       await Share.share({
-        message: `Check out this ${serviceName} reel by ${vendorName} on MTS India: ${reel.video_url}`,
+        message: `Check out this ${serviceName} reel by ${vendorName} on MTS India: ${getReelVideoUrl(reel)}`,
       });
     } catch (error) {
       console.error(error);
     }
   };
+
+  const handleReelView = useCallback(async (reel: any) => {
+    const reelId = getReelId(reel);
+    if (!reelId) {
+      return;
+    }
+
+    const key = String(reelId);
+    if (viewedReelIds.current.has(key)) {
+      return;
+    }
+
+    viewedReelIds.current.add(key);
+
+    try {
+      const response = await api.post(`/reels/${reelId}/view`);
+      const previousCount = Number(getReelViewCount(reel)) || 0;
+      const returnedCount = Number(
+        response.data?.data?.view_count ??
+        response.data?.data?.views ??
+        response.data?.view_count ??
+        response.data?.views
+      );
+      const nextCount = Number.isFinite(returnedCount) ? returnedCount : previousCount + 1;
+
+      setReels((current) =>
+        current.map((item) =>
+          String(getReelId(item)) === key
+            ? { ...item, view_count: nextCount, views: nextCount, viewCount: nextCount }
+            : item
+        )
+      );
+    } catch (error) {
+      console.warn('Failed to update reel view count:', error);
+    }
+  }, []);
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
+    const firstVisible = viewableItems.find((item) => typeof item.index === 'number');
+    if (typeof firstVisible?.index === 'number') {
+      setCurrentPage(firstVisible.index);
+    }
+  });
 
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<any>) => (
@@ -313,16 +408,15 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
         height={containerHeight}
         navigation={navigation}
         onShare={handleShare}
+        onView={handleReelView}
       />
     ),
-    [containerHeight, currentPage, isFocused, navigation]
+    [containerHeight, currentPage, handleReelView, isFocused, navigation]
   );
-
-  const dotCount = useMemo(() => reels.length, [reels.length]);
 
   return (
     <View
-      className="flex-1 bg-black"
+      style={{ flex: 1, backgroundColor: '#050505' }}
       onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
     >
       {loading ? (
@@ -340,7 +434,7 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
         <>
           <FlatList
             data={reels}
-            keyExtractor={(item) => String(item.id)}
+            keyExtractor={(item, index) => String(item?.id || index)}
             renderItem={renderItem}
             pagingEnabled
             showsVerticalScrollIndicator={false}
@@ -355,29 +449,19 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
             })}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
+            scrollEventThrottle={16}
+            initialNumToRender={1}
+            maxToRenderPerBatch={2}
+            windowSize={3}
+            removeClippedSubviews={Platform.OS !== 'web'}
             ListFooterComponent={
               loadingMore ? (
-                <View style={{ position: 'absolute', bottom: 20, left: 0, right: 0, alignItems: 'center' }}>
+                <View style={{ height: containerHeight, alignItems: 'center', justifyContent: 'center' }}>
                   <ActivityIndicator size="small" color="#007BFF" />
                 </View>
               ) : null
             }
           />
-
-          <View style={{ position: 'absolute', right: 8, top: 0, bottom: 0, justifyContent: 'center' }}>
-            {Array.from({ length: dotCount }).map((_, i) => (
-              <View
-                key={i}
-                style={{
-                  width: 6,
-                  height: i === currentPage ? 20 : 6,
-                  borderRadius: 999,
-                  marginVertical: 3,
-                  backgroundColor: i === currentPage ? '#007BFF' : 'rgba(255,255,255,0.35)',
-                }}
-              />
-            ))}
-          </View>
         </>
       )}
     </View>

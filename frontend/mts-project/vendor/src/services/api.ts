@@ -180,4 +180,11 @@ export const notificationService = {
     markAllRead: () => apiClient.patch('/notifications/read-all'),
 };
 
+export const announcementService = {
+    getMine: () => apiClient.get('/announcements/my'),
+    create: (data: any) => apiClient.post('/announcements', data),
+    update: (id: number, data: any) => apiClient.patch(`/announcements/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/announcements/${id}`),
+};
+
 export default apiClient;

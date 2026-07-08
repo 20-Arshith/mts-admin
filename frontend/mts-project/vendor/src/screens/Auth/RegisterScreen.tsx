@@ -78,7 +78,7 @@ export default function RegisterScreen() {
                     setAgentCode('');
                     Alert.alert(
                         'Invalid Agent Code',
-                        `${agentMsg}\n\nYou can continue without an agent code — your account will be reviewed by an admin.`,
+                        `${agentMsg}\n\nYou can continue without an agent code and onboard directly.`,
                         [{ text: 'Continue Without Code' }]
                     );
                     // Do NOT return — proceed with OTP send without the invalid code

@@ -9,6 +9,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const adminRoutes = require('./routes/admin.routes');
 const reelRoutes = require('./routes/reel.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const announcementRoutes = require('./routes/announcement.routes');
 const { errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reels', reelRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

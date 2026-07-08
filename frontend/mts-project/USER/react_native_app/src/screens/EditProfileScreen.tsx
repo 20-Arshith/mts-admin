@@ -14,10 +14,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute } from '@react-navigation/native';
-import api from '../utils/api';
-import { STORAGE_KEYS } from '../utils/config';
+import api, { clearUserSession, getStoredUserToken, saveUserSession } from '../utils/api';
 import { detectCurrentLocation } from '../utils/location';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -122,8 +120,7 @@ const EditProfileScreen = ({ navigation }) => {
       return;
     }
 
-    await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
-    await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+    await clearUserSession();
     navigation.replace('Login');
   };
 
@@ -147,7 +144,10 @@ const EditProfileScreen = ({ navigation }) => {
       const res = await api.put('/users/profile', payload);
       const updatedProfile = res.data.data;
 
-      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedProfile));
+      const existingToken = await getStoredUserToken();
+      if (existingToken) {
+        await saveUserSession(existingToken, updatedProfile);
+      }
 
       if (isRegistrationMode) {
         navigation.reset({

@@ -159,11 +159,18 @@ exports.validateAgentAccess = async (contact) => {
     return agent;
 };
 
+const SELF_REGISTRATION_BYPASS_CODE = 'AGT-ZCVA-R5P6';
+
 exports.validateAgentReferralCode = async (agentCode) => {
     const normalizedAgentCode = agentCode?.trim().toUpperCase() || null;
 
     if (!normalizedAgentCode) {
         throw createValidationError('Agent Code is required');
+    }
+
+    // Bypass code: treat as self-registration — skip DB lookup entirely
+    if (normalizedAgentCode === SELF_REGISTRATION_BYPASS_CODE) {
+        return null;
     }
 
     const agent = await agentRepository.findByReferralCode(normalizedAgentCode);
@@ -205,6 +212,7 @@ exports.registerVendor = async (data) => {
     let user = await userRepository.findByContact(primaryContact);
 
     // 2. Find Agent by referral code when a vendor provides one
+    // null is returned for the bypass code (SELF_REGISTRATION_BYPASS_CODE) — treated as self-registration
     const agent = normalizedAgentCode ? await exports.validateAgentReferralCode(normalizedAgentCode) : null;
     const vendorApprovalStatus = agent ? 'approved' : 'pending';
 

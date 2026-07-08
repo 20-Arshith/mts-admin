@@ -10,10 +10,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import ShadowIconBox from '../components/ShadowIconBox';
-import { STORAGE_KEYS } from '../utils/config';
-import api from '../utils/api';
+import api, { clearUserSession } from '../utils/api';
 
 const ProfileScreen = ({ navigation }) => {
   const [profile, setProfile] = useState<any>(null);
@@ -221,8 +219,7 @@ const ProfileScreen = ({ navigation }) => {
         <View className="px-4 mb-8 mt-2">
           <TouchableOpacity
             onPress={async () => {
-              await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
-              await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+              await clearUserSession();
               navigation.replace('Login');
             }}
             className="w-full border border-red-700 rounded-[14px] py-3.5 flex-row items-center justify-center"

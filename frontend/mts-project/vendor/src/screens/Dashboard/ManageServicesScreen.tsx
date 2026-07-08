@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import apiClient from '../../services/api';
@@ -10,14 +10,29 @@ export default function ManageServicesScreen() {
     const [services, setServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const formatPrice = (service: any) => {
+        const min = service.price_min ?? service.price;
+        const max = service.price_max;
+
+        if (min === null || min === undefined || min === '') {
+            return 'Rs N/A';
+        }
+
+        if (max !== null && max !== undefined && max !== '' && Number(max) !== Number(min)) {
+            return `Rs ${min} - ${max}`;
+        }
+
+        return `Rs ${min}`;
+    };
+
     const fetchServices = async () => {
         try {
             setLoading(true);
             const response = await apiClient.get('/vendors/profile');
             const vendorData = response.data?.data?.vendor ?? response.data?.data;
             setServices(vendorData?.services || []);
-        } catch (error) {
-            console.error('Failed to fetch services:', error);
+        } catch {
+            console.error('Failed to fetch services');
             Alert.alert('Error', 'Could not load your services.');
         } finally {
             setLoading(false);
@@ -34,7 +49,7 @@ export default function ManageServicesScreen() {
         try {
             await apiClient.patch(`/vendors/services/${serviceId}/availability`, { is_available: !isCurrentlyAvailable });
             fetchServices();
-        } catch (error) {
+        } catch {
             Alert.alert('Error', 'Could not update service availability.');
         }
     };
@@ -55,11 +70,12 @@ export default function ManageServicesScreen() {
                     <View style={styles.emptyContainer}>
                         <MaterialCommunityIcons name="briefcase-outline" size={64} color="#94A3B8" />
                         <Text style={styles.emptyTitle}>No services found</Text>
-                        <Text style={styles.emptySubtitle}>You haven't added any services yet.</Text>
+                        <Text style={styles.emptySubtitle}>You have not added any services yet.</Text>
                     </View>
                 ) : (
                     services.map((service, index) => {
                         const meta = getVendorCategoryMeta(service.category?.icon_name, service.category?.category_name);
+                        const isApproved = service.approval_status === 'approved';
                         return (
                             <View key={service.id || index} style={styles.serviceCard}>
                                 <View style={styles.serviceHeader}>
@@ -68,7 +84,7 @@ export default function ManageServicesScreen() {
                                     </View>
                                     <View style={styles.serviceInfo}>
                                         <Text style={styles.serviceTitle}>{service.service_title || service.category?.category_name}</Text>
-                                        <Text style={styles.servicePrice}>Rs {service.price || 'N/A'}</Text>
+                                        <Text style={styles.servicePrice}>{formatPrice(service)}</Text>
                                     </View>
                                     <View style={[styles.statusBadge, { backgroundColor: service.approval_status === 'approved' ? '#DCFCE7' : '#FEF9C3' }]}>
                                         <Text style={[styles.statusText, { color: service.approval_status === 'approved' ? '#166534' : '#854D0E' }]}>
@@ -78,16 +94,17 @@ export default function ManageServicesScreen() {
                                 </View>
                                 <View style={styles.serviceActions}>
                                     <TouchableOpacity
-                                        style={styles.actionButton}
+                                        style={[styles.actionButton, !isApproved && styles.actionButtonDisabled]}
+                                        disabled={!isApproved}
                                         onPress={() => toggleServiceAvailability(service.id, service.is_available)}
                                     >
                                         <MaterialCommunityIcons 
-                                            name={service.is_available ? "eye-off-outline" : "eye-outline"} 
+                                            name={isApproved ? (service.is_available ? "eye-outline" : "eye-off-outline") : "timer-sand"} 
                                             size={20} 
                                             color="#64748B" 
                                         />
                                         <Text style={styles.actionText}>
-                                            {service.is_available ? 'Unavailable for users' : 'Available for users'}
+                                            {!isApproved ? 'Awaiting admin approval' : service.is_available ? 'Visible to users' : 'Hidden from users'}
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
@@ -213,6 +230,9 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 8,
         paddingHorizontal: 4,
+    },
+    actionButtonDisabled: {
+        opacity: 0.75,
     },
     actionText: {
         flexShrink: 1,

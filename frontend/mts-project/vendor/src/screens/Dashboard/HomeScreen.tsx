@@ -1,4 +1,4 @@
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -15,9 +15,10 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import apiClient, { bookingService, notificationService } from '../../services/api';
+import apiClient, { bookingService } from '../../services/api';
 import { syncVendorLiveLocation } from '../../utils/location';
 import { getVendorCategoryMeta } from '../../utils/categoryMeta';
+import VendorAnnouncementManager from '../../components/VendorAnnouncementManager';
 
 function getVendorRecord(value: any) {
     return value?.vendor ?? value ?? null;
@@ -53,7 +54,6 @@ export default function HomeScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [syncingLocation, setSyncingLocation] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [availabilityMeta, setAvailabilityMeta] = useState<{ canEnable: boolean; reason: string }>({
         canEnable: true,
         reason: '',
@@ -98,11 +98,6 @@ export default function HomeScreen() {
                 setBookings(Array.isArray(bookingsRes.data?.data) ? bookingsRes.data.data : []);
             } catch (bookingError) {
                 setBookings([]);
-            }
-
-            const notificationsRes = await notificationService.getMyNotifications(5);
-            if (notificationsRes.data?.data) {
-                setUnreadCount(Number(notificationsRes.data.data.unreadCount || 0));
             }
 
             if (shouldSyncLocation) {
@@ -173,6 +168,28 @@ export default function HomeScreen() {
         [bookings],
     );
     const visibleReviews = showAllReviews ? reviewedBookings : reviewedBookings.slice(0, 2);
+    const serviceVisibilityWarnings = useMemo(() => {
+        const warnings: string[] = [];
+
+        if (approvalStatus !== 'approved') {
+            warnings.push('Your vendor account is waiting for admin approval.');
+        }
+
+        if (services.length === 0) {
+            warnings.push('No services have been added yet.');
+        } else if (approvedServices.length === 0) {
+            warnings.push('Your services are waiting for admin approval.');
+        } else if (liveServices.length === 0) {
+            warnings.push('Approved services are currently turned off.');
+        }
+
+        if (!isAvailable) {
+            warnings.push(availabilityMeta.reason || 'Your vendor availability is turned off.');
+        }
+
+        return warnings;
+    }, [approvalStatus, approvedServices.length, availabilityMeta.reason, isAvailable, liveServices.length, services.length]);
+
     const uniqueCategories = useMemo(() => {
         const seen = new Set();
         return services
@@ -347,39 +364,7 @@ export default function HomeScreen() {
                         />
                     </View>
 
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('Notifications')}
-                        style={{
-                            width: 42,
-                            height: 42,
-                            borderRadius: 21,
-                            backgroundColor: '#EEF4FF',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Ionicons name="notifications-outline" size={20} color="#007BFF" />
-                        {unreadCount > 0 ? (
-                            <View
-                                style={{
-                                    position: 'absolute',
-                                    top: 4,
-                                    right: 4,
-                                    minWidth: 16,
-                                    height: 16,
-                                    borderRadius: 8,
-                                    backgroundColor: '#EF4444',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    paddingHorizontal: 3,
-                                }}
-                            >
-                                <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '700' }}>
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                </Text>
-                            </View>
-                        ) : null}
-                    </TouchableOpacity>
+                    <View style={{ width: 42, height: 42 }} />
                 </View>
 
                 <TouchableOpacity
@@ -549,6 +534,44 @@ export default function HomeScreen() {
                     </View>
                 </View>
             ) : null}
+
+            {serviceVisibilityWarnings.length > 0 ? (
+                <View
+                    style={{
+                        marginHorizontal: 16,
+                        marginTop: 14,
+                        backgroundColor: '#FFFBEB',
+                        borderWidth: 1,
+                        borderColor: '#FDE68A',
+                        borderRadius: 18,
+                        padding: 14,
+                        flexDirection: 'row',
+                    }}
+                >
+                    <MaterialCommunityIcons name="alert-outline" size={22} color="#D97706" />
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                        <Text style={{ color: '#92400E', fontWeight: '800', fontSize: 14 }}>
+                            Why users may not see your services
+                        </Text>
+                        <Text style={{ color: '#92400E', fontSize: 12, lineHeight: 18, marginTop: 5 }}>
+                            Users can see and book your services only after your account is approved, at least one service is approved, that service is turned on, and your availability is active.
+                        </Text>
+                        {serviceVisibilityWarnings.map((warning, index) => (
+                            <View
+                                key={`${warning}-${index}`}
+                                style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 8 }}
+                            >
+                                <Text style={{ color: '#92400E', fontSize: 12, lineHeight: 17, marginRight: 6 }}>-</Text>
+                                <Text style={{ color: '#92400E', fontSize: 12, lineHeight: 17, flex: 1 }}>
+                                    {warning}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            ) : null}
+
+            <VendorAnnouncementManager vendorAddress={vendorData?.address} />
 
             <View style={{ paddingHorizontal: 16, marginTop: 22 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>

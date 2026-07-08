@@ -7,6 +7,7 @@ const { ROLES } = require('../utils/constants');
 
 // Public route to view reels
 router.get('/', reelController.getReels);
+router.post('/:id/view', reelController.recordView);
 
 // Vendor only routes for managing reels
 router.post('/', auth, checkRole([ROLES.VENDOR]), uploadVideo, reelController.uploadReel);

@@ -6,6 +6,7 @@ import HomeScreen from '../screens/Dashboard/HomeScreen';
 import OrdersScreen from '../screens/Dashboard/OrdersScreen';
 import ProfileStack from './ProfileStack';
 import ManageServicesScreen from '../screens/Dashboard/ManageServicesScreen';
+import NotificationsScreen from '../screens/Dashboard/NotificationsScreen';
 import { notificationService } from '../services/api';
 
 const Tab = createBottomTabNavigator();
@@ -54,13 +55,6 @@ export default function MainTabNavigator() {
         component={OrdersScreen}
         options={{
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="clipboard-list-outline" size={24} color={color} />,
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: '#EF4444',
-            color: '#FFFFFF',
-            fontSize: 10,
-            fontWeight: '700',
-          },
         }}
       />
       <Tab.Screen
@@ -69,6 +63,21 @@ export default function MainTabNavigator() {
         options={{
           title: 'Services',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="briefcase-outline" size={24} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          title: 'Updates',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="bell-outline" size={24} color={color} />,
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: '#EF4444',
+            color: '#FFFFFF',
+            fontSize: 10,
+            fontWeight: '700',
+          },
         }}
       />
       <Tab.Screen

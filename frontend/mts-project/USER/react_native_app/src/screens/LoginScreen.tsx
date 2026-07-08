@@ -15,9 +15,9 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE, STORAGE_KEYS } from '../utils/config';
+import { API_BASE } from '../utils/config';
 import { detectCurrentLocation, syncUserLocation } from '../utils/location';
+import { saveUserSession } from '../utils/api';
 
 const LoginScreen = ({ navigation }) => {
     const { width, height } = useWindowDimensions();
@@ -100,8 +100,7 @@ const LoginScreen = ({ navigation }) => {
                 throw new Error(json.message || 'Invalid OTP');
             }
 
-            await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, json.token);
-            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(json.user));
+            await saveUserSession(json.token, json.user);
 
             if (json.registrationRequired) {
                 navigation.replace('EditProfile', {

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, RefreshControl, StyleSheet, Dimensions, StatusBar, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, RefreshControl, StyleSheet, Dimensions, StatusBar, Alert, Platform } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { PieChart } from 'react-native-chart-kit';
@@ -10,6 +10,23 @@ import { agentService } from '../services/api';
 import { getErrorMessage } from '../utils/error';
 
 const { width } = Dimensions.get('window');
+
+const formatCoordinateLocation = ({ latitude, longitude }) => {
+    const lat = Number(latitude).toFixed(4);
+    const lng = Number(longitude).toFixed(4);
+    return `${lat}, ${lng}`;
+};
+
+const formatAddress = (address) => (
+    address?.name ||
+    address?.street ||
+    address?.district ||
+    address?.subregion ||
+    address?.city ||
+    address?.region ||
+    address?.country ||
+    ''
+);
 
 export default function HomeScreen() {
     const navigation = useNavigation();
@@ -41,30 +58,43 @@ export default function HomeScreen() {
         }
     };
 
-    useEffect(() => {
-        fetchAgentData();
+    const fetchCurrentLocation = async () => {
+        try {
+            setLocationName('Fetching location...');
 
-        (async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setLocationName('Location denied');
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({});
+            const coordsLabel = formatCoordinateLocation(location.coords);
+
+            if (Platform.OS === 'web' || typeof Location.reverseGeocodeAsync !== 'function') {
+                setLocationName(coordsLabel);
+                return;
+            }
+
             try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') {
-                    setLocationName('Location denied');
-                    return;
-                }
-
-                const location = await Location.getCurrentPositionAsync({});
                 const [address] = await Location.reverseGeocodeAsync({
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude,
                 });
-
-                if (address) {
-                    setLocationName(address.name || address.street || address.district || address.city || 'Unknown');
-                }
-            } catch {
-                setLocationName('Unable to fetch location');
+                setLocationName(formatAddress(address) || coordsLabel);
+            } catch (err) {
+                console.warn('Reverse geocoding failed:', err?.message || err);
+                setLocationName(coordsLabel);
             }
-        })();
+        } catch (err) {
+            console.warn('Failed to fetch current location:', err?.message || err);
+            setLocationName('Unable to fetch location');
+        }
+    };
+
+    useEffect(() => {
+        fetchAgentData();
+        fetchCurrentLocation();
     }, []);
 
     const onRefresh = useCallback(() => {
@@ -283,7 +313,13 @@ export default function HomeScreen() {
                                 placeholderTextColor="#94a3b8"
                             />
                         </View>
-                        <TouchableOpacity style={styles.currentLocationBtn} onPress={() => setLocationModalVisible(false)}>
+                        <TouchableOpacity
+                            style={styles.currentLocationBtn}
+                            onPress={() => {
+                                setLocationModalVisible(false);
+                                fetchCurrentLocation();
+                            }}
+                        >
                             <View style={styles.locationIconBg}>
                                 <MapPin color="#fff" size={16} />
                             </View>

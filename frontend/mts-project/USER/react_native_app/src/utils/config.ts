@@ -66,6 +66,11 @@ function getApiBaseUrl() {
 export const API_BASE = getApiBaseUrl();
 
 export const STORAGE_KEYS = {
+  TOKEN: 'mtsUserToken',
+  USER:  'mtsUserData',
+};
+
+export const LEGACY_STORAGE_KEYS = {
   TOKEN: 'userToken',
   USER:  'userData',
 };

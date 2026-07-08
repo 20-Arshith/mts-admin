@@ -9,9 +9,7 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from '../utils/config';
-import api from '../utils/api';
+import api, { clearUserSession, getStoredUserToken } from '../utils/api';
 
 const SplashScreen = ({ navigation }: any) => {
     const { width, height } = useWindowDimensions();
@@ -21,7 +19,7 @@ const SplashScreen = ({ navigation }: any) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+                const token = await getStoredUserToken();
 
                 if (!token) {
                     navigation.replace('Login');
@@ -35,8 +33,7 @@ const SplashScreen = ({ navigation }: any) => {
                         params: { autoFetchLocation: false },
                     });
                 } catch {
-                    await AsyncStorage.removeItem(STORAGE_KEYS.TOKEN);
-                    await AsyncStorage.removeItem(STORAGE_KEYS.USER);
+                    await clearUserSession();
                     navigation.replace('Login');
                 }
             } catch {

@@ -79,4 +79,10 @@ export const agentService = {
     getCategories: () => apiClient.get('/vendors/categories'),
 };
 
+export const notificationService = {
+    getMyNotifications: (limit = 10) => apiClient.get('/notifications/my', { params: { limit } }),
+    markRead: (id) => apiClient.patch(`/notifications/${id}/read`),
+    markAllRead: () => apiClient.patch('/notifications/read-all'),
+};
+
 export default apiClient;

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import AnnouncementBanner from '../components/AnnouncementBanner';
 import ShadowIconBox from '../components/ShadowIconBox';
 import { API_BASE } from '../utils/config';
 import api, { notificationService } from '../utils/api';
@@ -24,6 +25,8 @@ import {
     syncUserLocation,
 } from '../utils/location';
 import { getCategoryMeta, getServiceMeta } from '../utils/serviceHelpers';
+import { showUnreadAppNotifications } from '../utils/localNotifications';
+import { Announcement } from '../types/announcement';
 
 const CARD_COLORS = ['#1565C0', '#388E3C', '#E65100', '#6A1B9A', '#00796B', '#C2185B', '#FBC02D'];
 
@@ -90,8 +93,6 @@ const HomeScreen = ({ navigation, route }) => {
         color: string;
         imageUrl?: string | null;
     }>>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-
     const headerLogoWidth = Math.min(Math.max(screenWidth * 0.27, 92), 132);
     const headerLogoHeight = Math.min(Math.max(headerLogoWidth * 0.52, 40), 62);
     const heroCardWidth = Math.max(screenWidth - 32, 280);
@@ -257,7 +258,7 @@ const HomeScreen = ({ navigation, route }) => {
         try {
             const response = await notificationService.getMyNotifications(5);
             if (response.data?.data) {
-                setUnreadCount(Number(response.data.data.unreadCount || 0));
+                showUnreadAppNotifications(response.data.data.notifications || []);
             }
         } catch (error) {
             console.warn('Failed to fetch notifications.', error);
@@ -327,6 +328,19 @@ const HomeScreen = ({ navigation, route }) => {
     const displayBanners = topFetchedBanners.length > 0 ? topFetchedBanners : banners;
     const displayBottomBanners = bottomFetchedBanners.length > 0 ? bottomFetchedBanners : bottomBanners;
 
+    const openAnnouncementVendor = (announcement: Announcement) => {
+        if (!announcement.vendor_id) {
+            return;
+        }
+
+        navigation.navigate('VendorProfile', {
+            vendorId: announcement.vendor_id,
+            vendorName: 'Vendor',
+            type: 'Service',
+            rating: 4.8,
+        });
+    };
+
     return (
         <SafeAreaView
             className="flex-1 bg-[#F5F6FA]"
@@ -343,37 +357,7 @@ const HomeScreen = ({ navigation, route }) => {
                             />
                         </View>
 
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate('Notifications')}
-                            style={{
-                                width: 42,
-                                height: 42,
-                                borderRadius: 21,
-                                backgroundColor: '#EEF4FF',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Ionicons name="notifications-outline" size={20} color="#007BFF" />
-                            {unreadCount > 0 ? (
-                                <View style={{
-                                    position: 'absolute',
-                                    top: 4,
-                                    right: 4,
-                                    minWidth: 16,
-                                    height: 16,
-                                    borderRadius: 8,
-                                    backgroundColor: '#EF4444',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    paddingHorizontal: 3,
-                                }}>
-                                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '700' }}>
-                                        {unreadCount > 9 ? '9+' : unreadCount}
-                                    </Text>
-                                </View>
-                            ) : null}
-                        </TouchableOpacity>
+                        <View style={{ width: 42, height: 42 }} />
                     </View>
 
                     <TouchableOpacity
@@ -464,6 +448,12 @@ const HomeScreen = ({ navigation, route }) => {
                         </Text>
                     </View>
                 </TouchableOpacity>
+
+                <AnnouncementBanner
+                    locationName={locationName}
+                    locationDetail={locationDetail}
+                    onPress={openAnnouncementVendor}
+                />
 
                 <View className="mt-2">
                     <ScrollView

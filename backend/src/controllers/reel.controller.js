@@ -29,6 +29,21 @@ exports.getMyReels = async (req, res, next) => {
     }
 };
 
+exports.recordView = async (req, res, next) => {
+    try {
+        const reel = await reelService.incrementViewCount(req.params.id);
+        res.status(200).json({
+            success: true,
+            data: {
+                id: reel.id,
+                view_count: reel.view_count,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.removeReel = async (req, res, next) => {
     try {
         const vendorId = req.user.user_id;
