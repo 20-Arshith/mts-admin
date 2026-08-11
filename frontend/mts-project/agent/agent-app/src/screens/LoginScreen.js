@@ -59,7 +59,7 @@ const LoginScreen = ({ navigation }) => {
         }
     }, [showOtp]);
 
-    const handleContinue = async () => {
+    const handleSendOtp = async () => {
         const val = input.trim();
         setErrorMessage('');
         if (!val) {
@@ -74,70 +74,45 @@ const LoginScreen = ({ navigation }) => {
             setErrorMessage('Please enter a valid email address.');
             return;
         }
-
         try {
             await authService.sendOtp(val);
             setShowOtp(true);
-            setResendSeconds(30);
-            setOtp('');
-        } catch (error) {
-            const message = getErrorMessage(error, 'Failed to send OTP');
-            if (message.toLowerCase().includes('contact admin') || message.toLowerCase().includes('not found')) {
-                Alert.alert(
-                    'Not Registered',
-                    'You don\'t have an agent account yet. Would you like to register?',
-                    [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                            text: 'Register',
-                            onPress: () => navigation.navigate('AgentRegister'),
-                        },
-                    ]
-                );
-            } else {
-                setErrorMessage(message);
-                Alert.alert('Error', message);
-            }
+        } catch (err) {
+            const message = getErrorMessage(err, 'Failed to send OTP');
+            setErrorMessage(message);
         }
     };
 
-    const handleLogin = async () => {
-        setErrorMessage('');
-        if (otp.length < OTP_LENGTH) {
-            setErrorMessage('Enter the 6-digit OTP.');
+    const handleVerifyOtp = async () => {
+        const val = input.trim();
+        const enteredOtp = otp;
+        if (!enteredOtp || enteredOtp.length < 6) {
+            setErrorMessage('Please enter the 6-digit OTP.');
             return;
         }
-
         try {
-            const response = await authService.verifyOtp(input.trim(), otp);
-
+            const response = await authService.verifyOtp(val, enteredOtp);
             if (response.data.success) {
                 if (response.data.token) {
                     await AsyncStorage.setItem('userToken', response.data.token);
                     await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
-
                     navigation.replace('MainTabs', {
                         screen: 'Home',
-                        params: { autoFetchLocation: true }
+                        params: { autoFetchLocation: true },
                     });
                 } else if (response.data.registrationRequired) {
-                    Alert.alert(
-                        'Not Registered',
-                        'You don\'t have an agent account yet. Would you like to register?',
-                        [
-                            { text: 'Cancel', style: 'cancel' },
-                            {
-                                text: 'Register',
-                                onPress: () => navigation.navigate('AgentRegister'),
-                            },
-                        ]
-                    );
+                    Alert.alert('Not Registered', "You don't have an agent account yet. Would you like to register?", [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Register', onPress: () => navigation.navigate('AgentRegister') },
+                    ]);
                 }
+            } else {
+                setErrorMessage('Invalid OTP. Please try again.');
             }
         } catch (error) {
-            const message = getErrorMessage(error, 'Invalid OTP');
+            const message = getErrorMessage(error, 'OTP verification failed');
             setErrorMessage(message);
-            Alert.alert('Login Failed', message);
+            Alert.alert('Verification Failed', message);
         }
     };
 
@@ -231,20 +206,37 @@ const LoginScreen = ({ navigation }) => {
                                         </View>
                                     ) : null}
 
-                                    <TouchableOpacity
-                                        onPress={handleContinue}
-                                        activeOpacity={0.8}
-                                        style={styles.button}
-                                    >
-                                        <LinearGradient
-                                            colors={['#2563eb', '#1d4ed8']}
-                                            start={{ x: 0, y: 0 }}
-                                            end={{ x: 1, y: 0 }}
-                                            style={styles.buttonGradient}
+                                    {showOtp ? (
+                                        <TouchableOpacity
+                                            onPress={handleVerifyOtp}
+                                            activeOpacity={0.8}
+                                            style={styles.button}
                                         >
-                                            <Text style={styles.buttonText}>Continue</Text>
-                                        </LinearGradient>
-                                    </TouchableOpacity>
+                                            <LinearGradient
+                                                colors={['#059669', '#047857']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 0 }}
+                                                style={styles.buttonGradient}
+                                            >
+                                                <Text style={styles.buttonText}>Verify & Login</Text>
+                                            </LinearGradient>
+                                        </TouchableOpacity>
+                                    ) : (
+                                        <TouchableOpacity
+                                            onPress={handleSendOtp}
+                                            activeOpacity={0.8}
+                                            style={styles.button}
+                                        >
+                                            <LinearGradient
+                                                colors={['#2563eb', '#1d4ed8']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 0 }}
+                                                style={styles.buttonGradient}
+                                            >
+                                                <Text style={styles.buttonText}>Send OTP</Text>
+                                            </LinearGradient>
+                                        </TouchableOpacity>
+                                    )}
 
                                     {/* Register as Agent link */}
                                     <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 24 }}>
@@ -388,8 +380,8 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     logo: {
-        height: 70,
-        width: 180,
+        height: 48,
+        width: 120,
     },
     badge: {
         backgroundColor: '#dbeafe',

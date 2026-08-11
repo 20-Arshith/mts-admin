@@ -113,7 +113,7 @@ frontend/mts-project/admin-dashboard/.env
 Variable:
 
 ```env
-VITE_BASE_URL=http://147.79.68.37/
+VITE_BASE_URL=http://54.147.40.109/
 ```
 
 ### Agent app
@@ -127,7 +127,7 @@ frontend/mts-project/agent/agent-app/.env
 Variable:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=http://147.79.68.37/
+EXPO_PUBLIC_API_BASE_URL=http://54.147.40.109/
 ```
 
 ### User app
@@ -141,7 +141,7 @@ frontend/mts-project/USER/react_native_app/.env
 Variable:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=http://147.79.68.37/
+EXPO_PUBLIC_API_BASE_URL=http://54.147.40.109/
 ```
 
 ### Vendor app
@@ -155,13 +155,13 @@ frontend/mts-project/vendor/.env
 Variable:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=http://147.79.68.37/
+EXPO_PUBLIC_API_BASE_URL=http://54.147.40.109/
 ```
 
 ### Notes for production builds
 
-- Mobile APK builds use `eas.json` and already inject `EXPO_PUBLIC_API_BASE_URL=http://147.79.68.37/`
-- The Android mobile apps are configured to allow HTTP traffic to `http://147.79.68.37/`
+- Mobile APK builds use `eas.json` and already inject `EXPO_PUBLIC_API_BASE_URL=http://54.147.40.109/`
+- The Android mobile apps are configured to allow HTTP traffic to `http://54.147.40.109/`
 - Keep `.env` files local and commit only `.env.example`
 
 ## Run apps

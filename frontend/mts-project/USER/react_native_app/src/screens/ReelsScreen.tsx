@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
+  Linking,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
@@ -115,6 +117,49 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
       type: serviceName,
       rating: 4.8,
     });
+  };
+
+  const openWhatsApp = () => {
+    const rawPhone =
+      reel.vendor?.whatsapp_number ||
+      reel.vendor?.mobile ||
+      reel.vendor?.user?.mobile ||
+      reel.phone ||
+      reel.vendor_phone;
+
+    if (!rawPhone) {
+      Alert.alert('Contact Unavailable', 'Vendor WhatsApp contact details are not available.');
+      return;
+    }
+
+    let cleaned = String(rawPhone).replace(/[^\d+]/g, '');
+    if (!cleaned.startsWith('+')) {
+      if (cleaned.length === 10) {
+        cleaned = '91' + cleaned;
+      }
+    } else {
+      cleaned = cleaned.substring(1);
+    }
+
+    const message = encodeURIComponent(
+      `Hi ${vendorName}! I am reaching out regarding your service reel "${serviceName}" on MTS India.`
+    );
+    const whatsappUrl = `whatsapp://send?phone=${cleaned}&text=${message}`;
+    const webWhatsappUrl = `https://wa.me/${cleaned}?text=${message}`;
+
+    Linking.canOpenURL(whatsappUrl)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(whatsappUrl);
+        } else {
+          return Linking.openURL(webWhatsappUrl);
+        }
+      })
+      .catch(() => {
+        Linking.openURL(webWhatsappUrl).catch(() => {
+          Alert.alert('WhatsApp Error', 'Could not open WhatsApp on this device.');
+        });
+      });
   };
 
   return (
@@ -268,7 +313,7 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
           <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '600', marginTop: 4 }}>Share</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={{ alignItems: 'center' }} onPress={openVendorProfile}>
+        <TouchableOpacity style={{ alignItems: 'center' }} onPress={openWhatsApp}>
           <View
             style={{
               width: 46,
@@ -278,10 +323,10 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
               borderColor: '#FFFFFF',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#007BFF',
+              backgroundColor: '#25D366',
             }}
           >
-            <MaterialIcons name="storefront" size={22} color="#FFFFFF" />
+            <Ionicons name="logo-whatsapp" size={26} color="#FFFFFF" />
           </View>
         </TouchableOpacity>
       </View>

@@ -1,9 +1,8 @@
 node_modules/
 .expo/
 dist/
-npm-debug.log
-yarn-error.log
-.DS_Store
-.env
 apk-builds/
 apk-builds-cloud-*/
+npm-debug.log
+yarn-error.log
+

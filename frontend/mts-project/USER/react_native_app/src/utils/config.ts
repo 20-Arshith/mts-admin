@@ -1,6 +1,6 @@
 import { NativeModules, Platform } from 'react-native';
 
-const DEFAULT_BACKEND_BASE_URL = 'http://147.79.68.37/';
+const DEFAULT_BACKEND_BASE_URL = 'http://54.147.40.109/';
 const LEGACY_DEV_BACKEND_PORT = '3000';
 
 const trimTrailingSlashes = (value = '') => String(value).trim().replace(/\/+$/, '');

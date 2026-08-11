@@ -48,7 +48,7 @@ button {
   transition: all 0.2s ease;
 }
 
-input, select {
+input, select, textarea {
   font-family: inherit;
 }
 
@@ -98,6 +98,16 @@ input, select {
 
 .field-input::placeholder {
   color: #94a3b8;
+}
+
+.textarea-input {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.vendor-form-wide {
+  grid-column: 1 / -1;
 }
 
 .badge {

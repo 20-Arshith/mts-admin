@@ -9,7 +9,7 @@
       "distribution": "internal",
       "channel": "development",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://147.79.68.37/",
+        "EXPO_PUBLIC_API_BASE_URL": "http://54.147.40.109/",
         "NODE_ENV": "production"
       }
     },
@@ -18,10 +18,10 @@
       "channel": "preview",
       "android": {
         "buildType": "apk",
-        "credentialsSource": "remote"
+        "credentialsSource": "local"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://147.79.68.37/",
+        "EXPO_PUBLIC_API_BASE_URL": "http://54.147.40.109/",
         "NODE_ENV": "production"
       }
     },
@@ -29,11 +29,11 @@
       "autoIncrement": true,
       "channel": "production",
       "android": {
-        "buildType": "apk",
-        "credentialsSource": "remote"
+        "buildType": "app-bundle",
+        "credentialsSource": "local"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://147.79.68.37/",
+        "EXPO_PUBLIC_API_BASE_URL": "http://54.147.40.109/",
         "NODE_ENV": "production"
       }
     }

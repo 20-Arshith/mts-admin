@@ -31,7 +31,7 @@ const LoginScreen = ({ navigation }) => {
 
     const isPhone = input.trim().length > 0 && /^\d+$/.test(input.trim());
     const isCompact = height < 760;
-    const logoWidth = Math.min(width * 0.44, 170);
+    const logoWidth = Math.min(width * 0.28, 110);
     const otpBoxSize = Math.max(44, Math.min(56, Math.floor((width - 94) / 6)));
     const otpGap = width < 360 ? 6 : 10;
 
@@ -45,7 +45,7 @@ const LoginScreen = ({ navigation }) => {
         return () => clearInterval(timer);
     }, [showOtp, resendSeconds]);
 
-    const handleContinue = async () => {
+    const handleSendOtp = async () => {
         const val = input.trim();
         setOtpError('');
         if (!val) return;
@@ -66,25 +66,23 @@ const LoginScreen = ({ navigation }) => {
                 body: JSON.stringify({ contact: val, actorType: 'user' }),
             });
             const json = await res.json();
-            if (!res.ok || !json.success) {
+            if (!res.ok) {
                 throw new Error(json.message || 'Failed to send OTP');
             }
             setShowOtp(true);
-            setOtp(['', '', '', '', '', '']);
-            setResendSeconds(30);
-            setTimeout(() => { otpRefs.current[0]?.focus(); }, 150);
         } catch (e: any) {
-            Alert.alert('Error', e.message || 'Could not send OTP. Is the backend running?');
+            Alert.alert('Send OTP Failed', e.message || 'Could not send OTP');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleLogin = async () => {
-        const otpCode = otp.join('');
+    const handleVerifyOtp = async () => {
+        const val = input.trim();
+        const enteredOtp = otp.join('');
         setOtpError('');
-        if (otpCode.length < 6) {
-            setOtpError('Invalid OTP');
+        if (enteredOtp.length < 6) {
+            setOtpError('Please enter full 6-digit OTP');
             return;
         }
 
@@ -93,7 +91,7 @@ const LoginScreen = ({ navigation }) => {
             const res = await fetch(`${API_BASE}/auth/verify-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contact: input.trim(), otp: otpCode, actorType: 'user' }),
+                body: JSON.stringify({ contact: val, otp: enteredOtp, actorType: 'user' }),
             });
             const json = await res.json();
             if (!res.ok || !json.success) {
@@ -105,7 +103,7 @@ const LoginScreen = ({ navigation }) => {
             if (json.registrationRequired) {
                 navigation.replace('EditProfile', {
                     mode: 'registration',
-                    contact: input.trim(),
+                    contact: val,
                 });
                 return;
             }
@@ -122,13 +120,14 @@ const LoginScreen = ({ navigation }) => {
                 params: { autoFetchLocation: true },
             });
         } catch (e: any) {
-            const message = e.message || 'Invalid OTP';
-            setOtpError(message);
-            Alert.alert('Login Failed', message);
+            setOtpError(e.message || 'Verification failed');
         } finally {
             setIsLoading(false);
         }
     };
+
+    const handleContinue = handleSendOtp;
+    const handleLogin = handleVerifyOtp;
 
     const handleOtpChange = (text, index) => {
         if (otpError) {

@@ -1,11 +1,13 @@
 {
   "expo": {
-    "name": "react_native_app",
+    "name": "MYTOWNSERVICES",
     "slug": "react_native_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "mytownservices",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,14 +18,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/android-icon-foreground.png"
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
         "POST_NOTIFICATIONS",
         "VIBRATE"
       ],
-      "package": "com.charanwudaru.react_native_app"
+      "package": "com.mytownservice.user",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,12 +39,6 @@
     "updates": {
       "url": "https://u.expo.dev/eb5e5b45-d423-4fdb-bd54-915a421f9295"
     },
-    "extra": {
-      "eas": {
-        "projectId": "eb5e5b45-d423-4fdb-bd54-915a421f9295"
-      }
-    },
-    "owner": "charanw",
     "plugins": [
       "expo-font",
       "expo-video",
@@ -53,6 +52,12 @@
         }
       ],
       "./plugins/withAndroidHttpSupport"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ba1bb462-dee2-4e58-8df0-0f6ab815a3a3"
+      }
+    },
+    "owner": "arshithkakarla"
   }
 }

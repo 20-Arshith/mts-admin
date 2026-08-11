@@ -1,10 +1,11 @@
 {
   "expo": {
-    "name": "agent-app",
+    "name": "MTS Agent",
     "slug": "agent-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "mtsagent",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -22,7 +23,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.charanwudaru.agentapp"
+      "package": "com.mytownservice.agent",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,14 +35,14 @@
     "updates": {
       "url": "https://u.expo.dev/d0730ce3-8092-47be-9a04-7d57bc81a6aa"
     },
-    "extra": {
-      "eas": {
-        "projectId": "d0730ce3-8092-47be-9a04-7d57bc81a6aa"
-      }
-    },
-    "owner": "charanw",
     "plugins": [
       "./plugins/withAndroidHttpSupport"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "488334c2-a8e0-476e-8eed-f21004e2fe8c"
+      }
+    },
+    "owner": "arshithkakarla"
   }
 }

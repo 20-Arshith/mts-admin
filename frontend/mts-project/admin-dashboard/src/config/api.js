@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const DEFAULT_BACKEND_BASE_URL = 'http://147.79.68.37/';
+const DEFAULT_BACKEND_BASE_URL = 'http://54.147.40.109/';
 const LEGACY_DEV_BACKEND_PORT = '3000';
 const ADMIN_AUTH_STORAGE_KEY = 'adminToken';
 const ADMIN_AUTH_EXPIRED_EVENT = 'admin-auth-expired';

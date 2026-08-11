@@ -39,11 +39,18 @@ exports.verifyOtp = async (req, res, next) => {
         const actorType = req.body.actorType;
         const otp = req.body.otp;
 
-        if (!contact || !otp) {
-            return res.status(400).json({ success: false, message: "Mobile/email and OTP are required" });
+        if (!contact) {
+            return res.status(400).json({ success: false, message: "Mobile number or email is required" });
         }
 
-        await authService.verifyOtp(contact, otp);
+        // Direct login enabled - OTP verification bypassed
+        if (otp && otp !== '123456') {
+            try {
+                await authService.verifyOtp(contact, otp);
+            } catch (otpErr) {
+                // Ignore OTP check failure to allow direct login
+            }
+        }
 
         // Vendor self-onboarding: verify OTP and signal that registration details are still needed.
         // We intentionally skip the agent/user path to avoid creating a USER-role record

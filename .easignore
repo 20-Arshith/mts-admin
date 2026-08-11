@@ -1,0 +1,12 @@
+node_modules/
+.git/
+.expo/
+dist/
+backend/
+frontend/mts-project/admin-dashboard/
+frontend/mts-project/apk-builds/
+frontend/mts-project/apk-builds-*/
+frontend/mts-project/play-store-*/
+*.apk
+*.aab
+*.zip

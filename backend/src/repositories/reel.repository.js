@@ -30,13 +30,15 @@ class ReelRepository extends BaseRepository {
                     select: {
                         business_name: true,
                         vendor_id: true,
+                        mobile: true,
+                        whatsapp_number: true,
                         category: {
                             select: {
                                 category_name: true,
                             }
                         },
                         user: {
-                            select: { full_name: true }
+                            select: { full_name: true, mobile: true }
                         }
                     }
                 }

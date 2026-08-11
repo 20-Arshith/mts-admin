@@ -33,7 +33,7 @@ export default function LoginScreen() {
     const horizontalPadding = Math.max(18, Math.min(24, Math.round(width * 0.06)));
     const otpBoxSize = Math.max(42, Math.min(52, Math.floor((width - horizontalPadding * 2 - 28) / 6)));
     const isCompact = height < 720;
-    const logoWidth = Math.min(132, Math.round(width * 0.34));
+    const logoWidth = Math.min(95, Math.round(width * 0.24));
 
     useEffect(() => {
         let timer: ReturnType<typeof setInterval>;
@@ -45,7 +45,7 @@ export default function LoginScreen() {
         return () => clearInterval(timer);
     }, [showOtp, resendSeconds]);
 
-    const handleContinue = async () => {
+    const handleSendOtp = async () => {
         const val = input.trim();
         setOtpError('');
         if (!val) return;
@@ -55,31 +55,28 @@ export default function LoginScreen() {
         try {
             await authService.sendOtp(val, { actorType: 'vendor' });
             setShowOtp(true);
-            setOtp(['', '', '', '', '', '']);
-            setResendSeconds(30);
-            setTimeout(() => {
-                otpRefs.current[0]?.focus();
-            }, 150);
         } catch (error: any) {
-            Alert.alert('Error', error?.response?.data?.message || 'Failed to send OTP');
+            Alert.alert('Send OTP Failed', error?.response?.data?.message || 'Could not send OTP');
         }
     };
 
-    const handleLogin = async () => {
+    const handleVerifyOtp = async () => {
+        const val = input.trim();
+        const enteredOtp = otp.join('');
         setOtpError('');
-        if (otp.join('').length < 6) {
-            setOtpError('Invalid OTP');
+        if (enteredOtp.length < 6) {
+            setOtpError('Please enter full 6-digit OTP');
             return;
         }
+
         try {
-            const finalOtp = otp.join('');
-            const response = await authService.verifyOtp(input.trim(), finalOtp, { actorType: 'vendor' });
-            
+            const response = await authService.verifyOtp(val, enteredOtp, { actorType: 'vendor' });
+
             if (response.data.success) {
                 if (response.data.token) {
                     await AsyncStorage.setItem('userToken', response.data.token);
                     await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
-                    
+
                     const parentNav = navigation.getParent();
                     if (parentNav) {
                         parentNav.reset({ index: 0, routes: [{ name: 'Main' }] });
@@ -87,16 +84,11 @@ export default function LoginScreen() {
                         navigation.replace('Main');
                     }
                 } else if (response.data.registrationRequired) {
-                    navigation.navigate('Register', { contact: input.trim() });
+                    navigation.navigate('Register', { contact: val });
                 }
             }
         } catch (error: any) {
-            const message = error?.response?.data?.message || 'Invalid OTP';
-            setOtpError(message);
-            Alert.alert(
-                'Login Failed',
-                message
-            );
+            setOtpError(error?.response?.data?.message || 'Invalid OTP');
         }
     };
 
@@ -193,7 +185,7 @@ export default function LoginScreen() {
                                     autoCapitalize="none"
                                     value={input}
                                     onChangeText={setInput}
-                                    onSubmitEditing={handleContinue}
+                                    onSubmitEditing={handleSendOtp}
                                 />
                                 {input.trim() !== '' && (
                                     <View style={{
@@ -210,7 +202,7 @@ export default function LoginScreen() {
 
                             {/* Continue button */}
                             <TouchableOpacity
-                                onPress={handleContinue}
+                                onPress={handleSendOtp}
                                 style={{
                                     backgroundColor: '#007BFF',
                                     height: 56,
@@ -220,7 +212,7 @@ export default function LoginScreen() {
                                 }}
                             >
                                 <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16, letterSpacing: 0.5 }}>
-                                    Continue
+                                    Send OTP
                                 </Text>
                             </TouchableOpacity>
 
@@ -276,10 +268,13 @@ export default function LoginScreen() {
                                         Resend in {resendSeconds}s
                                     </Text>
                                 ) : (
-                                    <TouchableOpacity onPress={() => {
+                                    <TouchableOpacity onPress={async () => {
                                         setOtp(['', '', '', '', '', '']);
                                         setResendSeconds(30);
                                         otpRefs.current[0]?.focus();
+                                        try {
+                                            await authService.sendOtp(input.trim(), { actorType: 'vendor' });
+                                        } catch (e) {}
                                     }}>
                                         <Text style={{ color: '#007BFF', fontWeight: '700', fontSize: 14 }}>Resend OTP</Text>
                                     </TouchableOpacity>
@@ -288,7 +283,7 @@ export default function LoginScreen() {
 
                             {/* Login button */}
                             <TouchableOpacity
-                                onPress={handleLogin}
+                                onPress={handleVerifyOtp}
                                 style={{
                                     height: 56,
                                     borderRadius: 12,

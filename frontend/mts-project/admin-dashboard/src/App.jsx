@@ -89,6 +89,62 @@ const validateAgentForm = (formData) => {
   return { sanitized, message: '' };
 };
 
+const createEmptyVendorForm = () => ({
+  business_name: '',
+  full_name: '',
+  mobile: '',
+  email: '',
+  whatsapp_number: '',
+  address: '',
+  description: '',
+  agent_code: '',
+});
+
+const sanitizeVendorForm = (formData) => ({
+  business_name: formData.business_name.trim(),
+  full_name: formData.full_name.trim(),
+  mobile: formData.mobile.trim(),
+  email: formData.email.trim().toLowerCase(),
+  whatsapp_number: formData.whatsapp_number.trim(),
+  address: formData.address.trim(),
+  description: formData.description.trim(),
+  agent_code: formData.agent_code.trim().toUpperCase(),
+});
+
+const validateVendorForm = (formData) => {
+  const sanitized = sanitizeVendorForm(formData);
+
+  if (!sanitized.business_name) {
+    return { sanitized, message: 'Business name is required.' };
+  }
+
+  if (!sanitized.full_name) {
+    return { sanitized, message: 'Owner name is required.' };
+  }
+
+  if (!sanitized.mobile && !sanitized.email) {
+    return { sanitized, message: 'Enter at least one login contact: mobile number or email.' };
+  }
+
+  if (sanitized.mobile && !/^\d{10}$/.test(sanitized.mobile)) {
+    return { sanitized, message: 'Mobile number must be exactly 10 digits.' };
+  }
+
+  if (sanitized.whatsapp_number && !/^\d{10}$/.test(sanitized.whatsapp_number)) {
+    return { sanitized, message: 'WhatsApp number must be exactly 10 digits.' };
+  }
+
+  if (sanitized.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitized.email)) {
+    return { sanitized, message: 'Please enter a valid email address.' };
+  }
+
+  if (!sanitized.address) {
+    return { sanitized, message: 'Business address is required.' };
+  }
+
+  return { sanitized, message: '' };
+};
+
 const normalizeStatus = (value) => {
   const normalized = String(value || 'unknown').trim().toLowerCase();
 
@@ -2375,9 +2431,15 @@ const LoginPage = ({ setAuth, authMessage = '' }) => {
 const VendorManagement = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [vendors, setVendors] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState(createEmptyVendorForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
   const [sortBy, setSortBy] = useState('newest');
+  const vendorFormValidation = validateVendorForm(formData);
 
   const loadVendors = async () => {
     try {
@@ -2430,6 +2492,50 @@ const VendorManagement = () => {
     }
   };
 
+  const updateVendorFormField = (field, value) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    if (formError) setFormError('');
+    if (successMessage) setSuccessMessage('');
+  };
+
+  const handleAddVendor = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    setSuccessMessage('');
+
+    const { sanitized, message } = validateVendorForm(formData);
+    if (message) {
+      setFormError(message);
+      return;
+    }
+
+    setSubmitting(true);
+
+    const payload = {
+      business_name: sanitized.business_name,
+      full_name: sanitized.full_name,
+      ...(sanitized.mobile ? { mobile: sanitized.mobile } : {}),
+      ...(sanitized.email ? { email: sanitized.email } : {}),
+      whatsapp_number: sanitized.whatsapp_number || sanitized.mobile || undefined,
+      description: sanitized.description,
+      address: sanitized.address,
+      ...(sanitized.agent_code ? { agent_code: sanitized.agent_code } : {}),
+    };
+
+    try {
+      await publicApi.post('/auth/register-vendor', payload);
+      setSuccessMessage(`${sanitized.business_name} was added successfully.`);
+      setFormData(createEmptyVendorForm());
+      setShowForm(false);
+      loadVendors();
+    } catch (error) {
+      console.error(error);
+      setFormError(error?.response?.data?.message || 'Failed to add vendor. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     setStatusFilter(searchParams.get('status') || 'all');
   }, [searchParams]);
@@ -2465,11 +2571,187 @@ const VendorManagement = () => {
       <header className="page-header">
         <div>
           <h1 className="page-title">Vendor Management</h1>
-          <p className="page-subtitle">Monitor and approve business partners.</p>
+          <p className="page-subtitle">Add vendors, monitor business partners, and manage approval status.</p>
         </div>
+        <button
+          className="btn-primary header-action"
+          type="button"
+          onClick={() => {
+            setShowForm((current) => !current);
+            setFormError('');
+            setSuccessMessage('');
+          }}
+        >
+          <UserPlus size={18} /> Add Vendor
+        </button>
       </header>
 
+      {showForm && (
+        <div className="section-card glass form-panel">
+          <div className="panel-head-inline">
+            <h3>Add New Vendor</h3>
+            <button
+              type="button"
+              className="icon-only"
+              onClick={() => {
+                setShowForm(false);
+                setFormError('');
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <form onSubmit={handleAddVendor}>
+            <div className="form-grid">
+              <div>
+                <label className="field-label">Business Name *</label>
+                <input
+                  type="text"
+                  className="field-input"
+                  placeholder="e.g. RK Plumbing Services"
+                  value={formData.business_name}
+                  onChange={(event) => updateVendorFormField('business_name', event.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Owner Name *</label>
+                <input
+                  type="text"
+                  className="field-input"
+                  placeholder="e.g. Rahul Sharma"
+                  value={formData.full_name}
+                  onChange={(event) => updateVendorFormField('full_name', event.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Mobile Number</label>
+                <input
+                  type="tel"
+                  className="field-input"
+                  placeholder="e.g. 9876543210"
+                  value={formData.mobile}
+                  onChange={(event) => {
+                    const mobile = event.target.value.replace(/\D/g, '');
+                    const shouldSyncWhatsapp =
+                      !formData.whatsapp_number || formData.whatsapp_number === formData.mobile;
+                    setFormData((current) => ({
+                      ...current,
+                      mobile,
+                      whatsapp_number: shouldSyncWhatsapp ? mobile : current.whatsapp_number,
+                    }));
+                    if (formError) setFormError('');
+                    if (successMessage) setSuccessMessage('');
+                  }}
+                  maxLength={10}
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Email Address</label>
+                <input
+                  type="email"
+                  className="field-input"
+                  placeholder="e.g. vendor@mts.local"
+                  value={formData.email}
+                  onChange={(event) => updateVendorFormField('email', event.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="field-label">WhatsApp Number</label>
+                <input
+                  type="tel"
+                  className="field-input"
+                  placeholder="e.g. 9876543210"
+                  value={formData.whatsapp_number}
+                  onChange={(event) =>
+                    updateVendorFormField('whatsapp_number', event.target.value.replace(/\D/g, ''))
+                  }
+                  maxLength={10}
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Agent Code</label>
+                <input
+                  type="text"
+                  className="field-input"
+                  placeholder="e.g. AGT-ABCD-EFGH"
+                  value={formData.agent_code}
+                  onChange={(event) =>
+                    updateVendorFormField('agent_code', event.target.value.toUpperCase().replace(/\s/g, ''))
+                  }
+                />
+              </div>
+
+              <div className="vendor-form-wide">
+                <label className="field-label">Business Address *</label>
+                <textarea
+                  className="field-input textarea-input"
+                  placeholder="Full address, city, pincode"
+                  value={formData.address}
+                  onChange={(event) => updateVendorFormField('address', event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="vendor-form-wide">
+                <label className="field-label">Business Description</label>
+                <textarea
+                  className="field-input textarea-input"
+                  placeholder="Briefly describe the vendor services"
+                  value={formData.description}
+                  onChange={(event) => updateVendorFormField('description', event.target.value)}
+                />
+              </div>
+            </div>
+
+            {formError && <p className="form-error">{formError}</p>}
+
+            <div className="form-actions">
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={submitting || Boolean(vendorFormValidation.message)}
+              >
+                {submitting ? 'Adding...' : 'Add Vendor'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary secondary-button"
+                onClick={() => {
+                  setShowForm(false);
+                  setFormError('');
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {successMessage ? (
+        <div className="glass success-banner">
+          <div>
+            <p className="success-title">Vendor added</p>
+            <p className="success-copy">{successMessage}</p>
+          </div>
+          <button type="button" className="icon-only" onClick={() => setSuccessMessage('')}>
+            <X size={16} />
+          </button>
+        </div>
+      ) : null}
+
       <div className="section-card glass">
+        <div className="panel-header align-center">
+          <h3>All Vendors ({filteredVendors.length})</h3>
+        </div>
         <TableToolbar
           searchValue={search}
           onSearchChange={setSearch}
@@ -2507,6 +2789,16 @@ const VendorManagement = () => {
               </tr>
             </thead>
             <tbody>
+              {filteredVendors.length === 0 && (
+                <tr>
+                  <td colSpan={6}>
+                    <EmptyState
+                      title="No vendors found"
+                      description="Add a vendor or adjust the search and filters."
+                    />
+                  </td>
+                </tr>
+              )}
               {filteredVendors.map((vendor) => (
                 <tr key={vendor.vendor_id}>
                   <td>

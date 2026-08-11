@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const DEFAULT_BACKEND_BASE_URL = 'http://147.79.68.37/'
+const DEFAULT_BACKEND_BASE_URL = 'http://54.147.40.109/'
 
 const trimTrailingSlashes = (value = '') => String(value).trim().replace(/\/+$/, '')
 
