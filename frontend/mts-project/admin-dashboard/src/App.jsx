@@ -95,6 +95,7 @@ const createEmptyVendorForm = () => ({
   mobile: '',
   email: '',
   whatsapp_number: '',
+  category_id: '',
   address: '',
   description: '',
   agent_code: '',
@@ -106,6 +107,7 @@ const sanitizeVendorForm = (formData) => ({
   mobile: formData.mobile.trim(),
   email: formData.email.trim().toLowerCase(),
   whatsapp_number: formData.whatsapp_number.trim(),
+  category_id: String(formData.category_id || '').trim(),
   address: formData.address.trim(),
   description: formData.description.trim(),
   agent_code: formData.agent_code.trim().toUpperCase(),
@@ -260,7 +262,20 @@ const getCategoryIconOption = (iconName, categoryName = '') =>
   CATEGORY_ICON_OPTIONS.find((option) => option.value === inferCategoryIconKey(categoryName)) ||
   CATEGORY_ICON_OPTIONS[0];
 
+const isCustomCategoryIcon = (iconName = '') => {
+  const normalized = String(iconName || '').trim();
+  return normalized.startsWith('data:image/') || /^https?:\/\//i.test(normalized);
+};
+
 const CategoryIconAvatar = ({ iconName, categoryName = '', size = 'md' }) => {
+  if (isCustomCategoryIcon(iconName)) {
+    return (
+      <div className={`category-icon-avatar custom ${size === 'lg' ? 'large' : ''}`}>
+        <img src={iconName} alt={categoryName || 'Category icon'} />
+      </div>
+    );
+  }
+
   const iconOption = getCategoryIconOption(iconName, categoryName);
   const IconComponent = iconOption.icon;
 
@@ -278,6 +293,7 @@ const CategoryIconLibrary = ({
   value,
   onConfirm,
 }) => {
+  const fileInputRef = useRef(null);
   const containerRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [draftIconName, setDraftIconName] = useState(value || 'general');
@@ -302,6 +318,18 @@ const CategoryIconLibrary = ({
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, [isOpen, value]);
 
+  const handleDeviceIcon = (file) => {
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDraftIconName(String(reader.result || 'general'));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="category-icon-field" ref={containerRef}>
       <label className="field-label">Category Icon</label>
@@ -322,8 +350,8 @@ const CategoryIconLibrary = ({
         <div className="category-icon-popover">
           <div className="category-icon-popover-head">
             <div>
-              <h4>Icon Library</h4>
-              <p>Select one icon for this category.</p>
+              <h4>Category Icon</h4>
+              <p>Select an icon or upload one from this device.</p>
             </div>
             <CategoryIconAvatar iconName={draftIconName} size="md" />
           </div>
@@ -356,6 +384,21 @@ const CategoryIconLibrary = ({
           </div>
 
           <div className="category-icon-popover-actions">
+            <button
+              type="button"
+              className="secondary-button btn-secondary"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <UploadCloud size={16} />
+              Upload
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden-file-input"
+              onChange={(event) => handleDeviceIcon(event.target.files?.[0])}
+            />
             <button
               type="button"
               className="secondary-button btn-secondary"
@@ -2428,9 +2471,181 @@ const LoginPage = ({ setAuth, authMessage = '' }) => {
   );
 };
 
+const UserManagement = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [error, setError] = useState('');
+
+  const readUserRows = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.data?.users)) return payload.data.users;
+    if (Array.isArray(payload?.users)) return payload.users;
+    return [];
+  };
+
+  const loadUsers = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const endpoints = ['/users', '/customers', '/app-users'];
+      let rows = [];
+      let lastError = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const response = await api.get(endpoint);
+          rows = readUserRows(response.data);
+          lastError = null;
+          break;
+        } catch (requestError) {
+          lastError = requestError;
+        }
+      }
+
+      if (lastError) {
+        throw lastError;
+      }
+
+      setUsers(rows);
+    } catch (requestError) {
+      console.error(requestError);
+      setUsers([]);
+      setError(requestError.response?.data?.message || 'Could not load app users right now.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const searched = users.filter((user) =>
+      includesQuery(search, [
+        user.full_name,
+        user.name,
+        user.mobile,
+        user.phone,
+        user.email,
+        user.profile?.address,
+        user.address,
+      ]),
+    );
+
+    if (sortBy === 'name-asc') {
+      return sortRows(searched, (user) => user.full_name || user.name, 'asc');
+    }
+    if (sortBy === 'name-desc') {
+      return sortRows(searched, (user) => user.full_name || user.name, 'desc');
+    }
+    if (sortBy === 'oldest') {
+      return sortRows(searched, (user) => new Date(user.created_at || user.createdAt || 0).getTime(), 'asc');
+    }
+    return sortRows(searched, (user) => new Date(user.created_at || user.createdAt || 0).getTime(), 'desc');
+  }, [search, sortBy, users]);
+
+  return (
+    <div className="main-content">
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Users</h1>
+          <p className="page-subtitle">Review the customers logging in through the user app.</p>
+        </div>
+        <button type="button" className="toolbar-button" onClick={loadUsers}>
+          <RefreshCcw size={16} />
+          Refresh
+        </button>
+      </header>
+
+      {error ? <div className="form-error">{error}</div> : null}
+
+      <div className="section-card glass">
+        <div className="panel-header align-center">
+          <h3>App Users ({filteredUsers.length})</h3>
+        </div>
+        <TableToolbar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search name, phone, email, address"
+          sortValue={sortBy}
+          onSortChange={setSortBy}
+          sortOptions={[
+            { value: 'newest', label: 'Newest first' },
+            { value: 'oldest', label: 'Oldest first' },
+            { value: 'name-asc', label: 'Name A-Z' },
+            { value: 'name-desc', label: 'Name Z-A' },
+          ]}
+        />
+
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Contact</th>
+                <th>Location</th>
+                <th>Joined</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState title="Loading users" description="Fetching user app login details." />
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState title="No users found" description="Users will appear here after they log in or register." />
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => {
+                  const displayName = user.full_name || user.name || user.profile?.full_name || 'User';
+                  const mobile = user.mobile || user.phone || user.profile?.mobile || 'N/A';
+                  const email = user.email || user.profile?.email || 'N/A';
+                  const address = user.profile?.address || user.address || user.city || 'N/A';
+                  const status = user.is_active === false ? 'Inactive' : 'Active';
+
+                  return (
+                    <tr key={user.user_id || user.id || `${mobile}-${email}`}>
+                      <td>
+                        <AvatarName name={displayName} subtitle={`ID: ${user.user_id || user.id || 'N/A'}`} />
+                      </td>
+                      <td>
+                        <div>{mobile}</div>
+                        <div className="table-muted">{email}</div>
+                      </td>
+                      <td>{address}</td>
+                      <td>{formatDate(user.created_at || user.createdAt)}</td>
+                      <td>
+                        <span className={`status-dot ${status === 'Active' ? 'success' : 'warning'}`}>
+                          {status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const VendorManagement = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [vendors, setVendors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(createEmptyVendorForm);
   const [submitting, setSubmitting] = useState(false);
@@ -2450,8 +2665,18 @@ const VendorManagement = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const res = await api.get('/categories');
+      setCategories(res.data.data || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     loadVendors();
+    loadCategories();
   }, []);
 
   const updateStatus = async (id, status) => {
@@ -2516,6 +2741,7 @@ const VendorManagement = () => {
       full_name: sanitized.full_name,
       ...(sanitized.mobile ? { mobile: sanitized.mobile } : {}),
       ...(sanitized.email ? { email: sanitized.email } : {}),
+      ...(sanitized.category_id ? { category_id: Number(sanitized.category_id) } : {}),
       whatsapp_number: sanitized.whatsapp_number || sanitized.mobile || undefined,
       description: sanitized.description,
       address: sanitized.address,
@@ -2687,6 +2913,22 @@ const VendorManagement = () => {
                     updateVendorFormField('agent_code', event.target.value.toUpperCase().replace(/\s/g, ''))
                   }
                 />
+              </div>
+
+              <div>
+                <label className="field-label">Service Category</label>
+                <select
+                  className="field-input"
+                  value={formData.category_id}
+                  onChange={(event) => updateVendorFormField('category_id', event.target.value)}
+                >
+                  <option value="">Select category</option>
+                  {categories.map((category) => (
+                    <option key={category.category_id} value={category.category_id}>
+                      {category.category_name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="vendor-form-wide">
@@ -4007,6 +4249,12 @@ function App() {
                 </NavLink>
               </li>
               <li>
+                <NavLink to="/users" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                  <Users size={20} />
+                  Users
+                </NavLink>
+              </li>
+              <li>
                 <NavLink to="/vendors" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                   <Store size={20} />
                   Vendors
@@ -4078,6 +4326,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/orders" element={<OrdersManagement />} />
           <Route path="/agents" element={<AgentManagement />} />
+          <Route path="/users" element={<UserManagement />} />
           <Route path="/vendors" element={<VendorManagement />} />
           <Route path="/services" element={<ServiceManagement />} />
           <Route path="/service-categories" element={<ServiceCategoryManagement />} />

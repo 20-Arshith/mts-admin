@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "a13965a8-864c-46a9-a983-7dfa8da68ded"
+      }
+    },
+    "android": {
+      "package": "com.arshithkakarla.mtsindia"
+    }
+  }
+}

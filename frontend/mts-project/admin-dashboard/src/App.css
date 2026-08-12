@@ -973,6 +973,17 @@
   border-radius: 18px;
 }
 
+.category-icon-avatar.custom {
+  overflow: hidden;
+  background: #f8fbff;
+}
+
+.category-icon-avatar.custom img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .category-icon-popover {
   position: absolute;
   top: calc(100% + 0.65rem);
@@ -1060,6 +1071,10 @@
   justify-content: flex-end;
   gap: 0.7rem;
   margin-top: 1rem;
+}
+
+.hidden-file-input {
+  display: none;
 }
 
 .section-card {

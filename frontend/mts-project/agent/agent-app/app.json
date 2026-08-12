@@ -2,7 +2,7 @@
   "expo": {
     "name": "MTS Agent",
     "slug": "agent-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "mtsagent",
@@ -11,20 +11,20 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#01164B"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#01164B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.mytownservice.agent",
-      "versionCode": 1
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,7 +36,8 @@
       "url": "https://u.expo.dev/d0730ce3-8092-47be-9a04-7d57bc81a6aa"
     },
     "plugins": [
-      "./plugins/withAndroidHttpSupport"
+      "./plugins/withAndroidHttpSupport",
+      "expo-location"
     ],
     "extra": {
       "eas": {
