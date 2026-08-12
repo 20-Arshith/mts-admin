@@ -19,6 +19,15 @@ exports.getAgents = async (req, res, next) => {
     }
 };
 
+exports.getUsers = async (req, res, next) => {
+    try {
+        const users = await adminService.getAllUsers();
+        res.status(200).json({ success: true, data: users });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.updateAgentStatus = async (req, res, next) => {
     try {
         const { id } = req.params;

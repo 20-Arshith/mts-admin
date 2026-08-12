@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const logger = require('../utils/logger');
+const { ROLES } = require('../utils/constants');
 const { createValidationError, validateAgentOnboardingInput } = require('../utils/validation');
 
 const normalizeApprovalStatus = (value) => {
@@ -196,6 +197,26 @@ exports.getAllAgents = async () => {
             }
         },
         orderBy: { created_at: 'desc' }
+    });
+};
+
+exports.getAllUsers = async () => {
+    return await prisma.user.findMany({
+        where: {
+            role_id: ROLES.USER,
+        },
+        include: {
+            role: true,
+            profile: true,
+            _count: {
+                select: {
+                    bookings: true,
+                    reviews: true,
+                    notifications: true,
+                },
+            },
+        },
+        orderBy: { created_at: 'desc' },
     });
 };
 

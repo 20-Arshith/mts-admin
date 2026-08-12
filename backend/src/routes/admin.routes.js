@@ -9,6 +9,7 @@ router.use(auth);
 router.use(checkRole([ROLES.ADMIN]));
 
 router.get('/stats', adminController.getDashboardStats);
+router.get('/users', adminController.getUsers);
 router.get('/agents', adminController.getAgents);
 router.post('/agents/onboard', adminController.onboardAgent);
 router.patch('/agents/:id/status', adminController.updateAgentStatus);

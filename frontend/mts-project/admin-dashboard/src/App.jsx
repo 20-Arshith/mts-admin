@@ -2741,7 +2741,7 @@ const VendorManagement = () => {
       full_name: sanitized.full_name,
       ...(sanitized.mobile ? { mobile: sanitized.mobile } : {}),
       ...(sanitized.email ? { email: sanitized.email } : {}),
-      ...(sanitized.category_id ? { category_id: Number(sanitized.category_id) } : {}),
+      ...(sanitized.category_id ? { categories: [Number(sanitized.category_id)] } : {}),
       whatsapp_number: sanitized.whatsapp_number || sanitized.mobile || undefined,
       description: sanitized.description,
       address: sanitized.address,
