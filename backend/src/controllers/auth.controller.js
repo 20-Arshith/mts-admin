@@ -14,19 +14,10 @@ exports.sendOtp = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "Mobile number or email is required" });
         }
 
-        // vendor_registration = self-onboarding flow; skip all pre-OTP access checks
-        if (actorType === 'vendor') {
-            await authService.validateVendorAccess(contact);
-        } else if (actorType === 'agent') {
-            await authService.validateAgentAccess(contact);
-        }
-        // 'vendor_registration' and other actorTypes skip access validation intentionally
-
-        const otp = await authService.sendOtp(contact);
+        // Bypass actual OTP sending for login as requested by user
         res.status(200).json({
             success: true,
-            message: "OTP sent successfully",
-            ...(config.nodeEnv !== 'production' ? { debugOtp: otp } : {}),
+            message: "OTP bypassed for login",
         });
     } catch (error) {
         next(error);

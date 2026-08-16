@@ -22,6 +22,7 @@ model User {
   full_name  String
   mobile     String?      @unique
   email      String?      @unique
+  expo_push_token String?
   status     String       @default("active")
   created_at DateTime     @default(now())
   profile    UserProfile?
@@ -183,6 +184,8 @@ model Reel {
   category_id   Int?
   thumbnail_url String?
   view_count    Int      @default(0)
+  approval_status String @default("pending")
+  status        String   @default("pending")
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
   expiry_date   DateTime?
@@ -255,6 +258,8 @@ model Announcement {
   start_at            DateTime @default(now())
   expires_at          DateTime?
   is_active           Boolean  @default(true)
+  approval_status     String   @default("pending")
+  status              String   @default("pending")
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 

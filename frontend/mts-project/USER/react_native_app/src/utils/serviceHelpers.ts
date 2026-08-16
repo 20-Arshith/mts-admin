@@ -11,6 +11,11 @@ export const CATEGORY_VISUALS: Record<string, { icon: string; color: string; gra
     security: { icon: 'security', color: '#0F766E', gradient: ['#14B8A6', '#0F766E'], bg: '#DCFCE7', fg: '#0F766E' },
 };
 
+export const isCustomCategoryIcon = (iconName?: string | null) => {
+    const value = String(iconName || '').trim();
+    return value.startsWith('data:image/') || /^https?:\/\//i.test(value);
+};
+
 export const getCategoryMeta = (iconName?: string | null, fallbackName?: string) => {
     const normalizedIcon = (iconName || '').toLowerCase();
     if (normalizedIcon && normalizedIcon !== 'general' && CATEGORY_VISUALS[normalizedIcon]) {

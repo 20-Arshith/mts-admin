@@ -21,5 +21,6 @@ router.get('/services', userController.getServicesByCategory);
 
 router.get('/profile', auth, userController.getProfile);
 router.put('/profile', auth, userController.updateProfile);
+router.patch('/push-token', auth, userController.updatePushToken);
 
 module.exports = router;

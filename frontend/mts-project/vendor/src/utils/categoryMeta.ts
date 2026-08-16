@@ -14,6 +14,11 @@ export const VENDOR_CATEGORY_VISUALS: Record<
     security: { icon: 'security', color: '#0F766E', bg: '#DCFCE7' },
 };
 
+export const isVendorCustomCategoryIcon = (iconName?: string | null) => {
+    const value = String(iconName || '').trim();
+    return value.startsWith('data:image/') || /^https?:\/\//i.test(value);
+};
+
 export const getVendorServiceMeta = (serviceName?: string | null) => {
     const name = String(serviceName || '').toLowerCase();
 

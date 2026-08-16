@@ -6,6 +6,8 @@ const folders = {
     service_image: 'mts-india/vendor-media/services',
     gallery: 'mts-india/vendor-media/gallery',
     payout_proof: 'mts-india/admin-media/payout-proofs',
+    announcement: 'mts-india/vendor-media/announcements',
+    category_icon: 'mts-india/admin-media/category-icons',
 };
 
 exports.uploadImage = async (file, assetType = 'logo') => {

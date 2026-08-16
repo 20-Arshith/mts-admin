@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 const ShadowIconBox = ({
@@ -9,7 +9,14 @@ const ShadowIconBox = ({
   iconSize = 28,
   radius = 18,
   iconFamily = 'MaterialIcons',
+  imageUri = undefined,
 }) => {
+  const [imageFailed, setImageFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    setImageFailed(false);
+  }, [imageUri]);
+
   return (
     <View
       style={{
@@ -26,7 +33,14 @@ const ShadowIconBox = ({
         elevation: 24,
       }}
     >
-      {iconFamily === 'Ionicons' ? (
+      {imageUri && !imageFailed ? (
+        <Image
+          source={{ uri: imageUri }}
+          resizeMode="cover"
+          style={{ width: '100%', height: '100%', borderRadius: radius }}
+          onError={() => setImageFailed(true)}
+        />
+      ) : iconFamily === 'Ionicons' ? (
         <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
       ) : (
         <MaterialIcons name={icon} size={iconSize} color="#FFFFFF" />

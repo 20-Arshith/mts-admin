@@ -24,7 +24,7 @@ import {
     looksLikeCoordinateAddress,
     syncUserLocation,
 } from '../utils/location';
-import { getCategoryMeta, getServiceMeta } from '../utils/serviceHelpers';
+import { getCategoryMeta, getServiceMeta, isCustomCategoryIcon } from '../utils/serviceHelpers';
 import { showUnreadAppNotifications } from '../utils/localNotifications';
 import { Announcement } from '../types/announcement';
 
@@ -214,6 +214,7 @@ const HomeScreen = ({ navigation, route }) => {
                             label: cat.category_name,
                             color: meta.color,
                             id: cat.category_id,
+                            icon_name: cat.icon_name,
                         };
                     });
                     setCategories(mapped);
@@ -295,6 +296,7 @@ const HomeScreen = ({ navigation, route }) => {
                             vendorName: service.vendor?.business_name || 'Service Provider',
                             serviceName: service.service_title || 'Service',
                             categoryName: service.category?.category_name || 'General',
+                            categoryIcon: service.category?.icon_name,
                             rating: service.rating != null ? Number(service.rating) : 0,
                             reviewCount: Number(service.review_count || 0),
                             priceValue: service.price_min != null ? Number(service.price_min) : 0,
@@ -532,7 +534,16 @@ const HomeScreen = ({ navigation, route }) => {
                                 className="w-[22%] mb-4 items-center"
                                 onPress={() => navigation.navigate('Search', { initialSearch: cat.label })}
                             >
-                                <ShadowIconBox icon={cat.icon} color={cat.color} />
+                                <ShadowIconBox
+                                    icon={cat.icon}
+                                    color={cat.color}
+                                    imageUri={
+                                        cat.icon_name &&
+                                        (cat.icon_name.startsWith('data:image/') || /^https?:\/\//i.test(cat.icon_name))
+                                            ? cat.icon_name
+                                            : undefined
+                                    }
+                                />
                                 <Text className="text-xs font-medium text-gray-900 mt-2 text-center">
                                     {cat.label}
                                 </Text>
@@ -593,8 +604,8 @@ const HomeScreen = ({ navigation, route }) => {
                                                 className="w-14 h-14 rounded-2xl items-center justify-center overflow-hidden"
                                                 style={{ backgroundColor: service.color + '18' }}
                                             >
-                                                {service.imageUrl ? (
-                                                     <Image source={{uri: service.imageUrl}} style={{width: '100%', height: '100%'}} resizeMode="cover" />
+                                                {service.imageUrl || (service.categoryIcon && (service.categoryIcon.startsWith('data:image/') || /^https?:\/\//i.test(service.categoryIcon))) ? (
+                                                    <Image source={{uri: service.imageUrl || service.categoryIcon}} style={{width: '100%', height: '100%'}} resizeMode="cover" />
                                                 ) : (
                                                     <MaterialIcons name={meta.icon as any} size={28} color={meta.color} />
                                                 )}

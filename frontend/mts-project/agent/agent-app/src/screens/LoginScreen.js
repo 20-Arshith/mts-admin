@@ -5,7 +5,6 @@ import {
     TextInput,
     TouchableOpacity,
     Image,
-    SafeAreaView,
     KeyboardAvoidingView,
     Platform,
     StatusBar,
@@ -15,6 +14,7 @@ import {
     StyleSheet,
     Dimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -191,7 +191,7 @@ const LoginScreen = ({ navigation }) => {
                                             autoCapitalize="none"
                                             value={input}
                                             onChangeText={setInput}
-                                            onSubmitEditing={handleContinue}
+                                            onSubmitEditing={handleSendOtp}
                                         />
                                         {input.trim() !== '' && (
                                             <View style={styles.typeIndicator}>
@@ -295,7 +295,7 @@ const LoginScreen = ({ navigation }) => {
                                                     setOtp('');
                                                     setResendSeconds(30);
                                                     focusOtpInput();
-                                                    handleContinue();
+                                                    handleSendOtp();
                                                 }}
                                             >
                                                 <Text style={styles.resendAction}>Resend OTP</Text>
@@ -310,7 +310,7 @@ const LoginScreen = ({ navigation }) => {
                                     ) : null}
 
                                     <TouchableOpacity
-                                        onPress={handleLogin}
+                                        onPress={handleVerifyOtp}
                                         activeOpacity={0.8}
                                         style={styles.button}
                                     >

@@ -38,6 +38,16 @@ async function attachVendorInsights(vendor) {
         return vendor;
     }
 
+    const prisma = require('../config/db');
+    const totalCompleted = await prisma.booking.count({
+        where: {
+            vendor_service: {
+                vendor_id: vendor.vendor_id
+            },
+            booking_status: 'completed'
+        }
+    });
+
     const ratingSummary = await reviewRepository.getVendorRatingSummary(vendor.vendor_id);
     const sortedServices = Array.isArray(vendor.services)
         ? [...vendor.services].sort((left, right) => {
@@ -60,6 +70,7 @@ async function attachVendorInsights(vendor) {
     return {
         ...vendor,
         ...ratingSummary,
+        total_completed: totalCompleted,
         services: sortedServices,
     };
 }

@@ -31,6 +31,25 @@ exports.updateProfile = async (req, res, next) => {
     }
 };
 
+exports.updatePushToken = async (req, res, next) => {
+    try {
+        const userId = Number(req.user?.user_id);
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+        
+        const { expo_push_token } = req.body;
+        // In order to avoid circular dependencies or bloating userService, we can directly call repository here
+        // or add it to userService. Let's add it to userService.
+        const userRepository = require('../repositories/user.repository');
+        await userRepository.updatePushToken(userId, expo_push_token);
+        
+        res.status(200).json({ success: true, message: 'Push token updated' });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // ─── Category & Service Browsing ────────────────────────────────────────────
 
 /**

@@ -25,6 +25,8 @@ type Announcement = {
     start_at?: string;
     expires_at?: string;
     is_active: boolean;
+    approval_status?: string;
+    status?: string;
     created_at?: string;
 };
 
@@ -71,6 +73,27 @@ const formatDateRange = (start?: string | null, end?: string | null) => {
     if (startLabel) return `From ${startLabel}`;
     if (endLabel) return `Until ${endLabel}`;
     return 'No schedule';
+};
+
+const normalizeApprovalStatus = (value?: string | null) => {
+    const normalized = String(value || 'pending').trim().toLowerCase();
+    if (['approved', 'approve', 'accepted'].includes(normalized)) return 'approved';
+    if (['rejected', 'reject', 'declined'].includes(normalized)) return 'rejected';
+    return 'pending';
+};
+
+const getApprovalStatusLabel = (value?: string | null) => {
+    const normalized = normalizeApprovalStatus(value);
+    if (normalized === 'approved') return 'Approved';
+    if (normalized === 'rejected') return 'Rejected';
+    return 'Pending approval';
+};
+
+const getApprovalStatusColor = (value?: string | null) => {
+    const normalized = normalizeApprovalStatus(value);
+    if (normalized === 'approved') return { text: '#15803D', bg: '#DCFCE7', border: '#86EFAC' };
+    if (normalized === 'rejected') return { text: '#B91C1C', bg: '#FEE2E2', border: '#FCA5A5' };
+    return { text: '#92400E', bg: '#FEF3C7', border: '#FCD34D' };
 };
 
 const resolveDefaultLocation = (address?: string | null) => {
@@ -254,7 +277,7 @@ export default function VendorAnnouncementManager({ vendorAddress }: { vendorAdd
 
             await fetchAnnouncements();
             resetForm();
-            Alert.alert('Broadcast saved', form.is_active ? 'Active users in this location can now see it.' : 'Saved as inactive.');
+            Alert.alert('Broadcast sent for review', 'Admin approval is required before users can see this broadcast.');
         } catch (error: any) {
             Alert.alert('Could not save broadcast', error?.response?.data?.message || 'Please try again later.');
         } finally {
@@ -327,7 +350,7 @@ export default function VendorAnnouncementManager({ vendorAddress }: { vendorAdd
                 <View style={{ flex: 1, paddingRight: 12 }}>
                     <Text style={{ color: '#111827', fontSize: 18, fontWeight: '800' }}>Broadcast to customers</Text>
                     <Text style={{ color: '#6B7280', fontSize: 12, lineHeight: 18, marginTop: 4 }}>
-                        Update the text, image mode, location, and active status shown in the user app banner.
+                        Updates are sent to admin for approval before they appear in the user app.
                     </Text>
                 </View>
                 <View
@@ -510,7 +533,7 @@ export default function VendorAnnouncementManager({ vendorAddress }: { vendorAdd
                         {form.is_active ? 'Active broadcast' : 'Inactive draft'}
                     </Text>
                     <Text style={{ color: form.is_active ? '#166534' : '#64748B', fontSize: 11, marginTop: 3 }}>
-                        {form.is_active ? 'Visible to matching users after save.' : 'Saved, but hidden from users.'}
+                        {form.is_active ? 'Will become visible after admin approval.' : 'Saved inactive and hidden from users.'}
                     </Text>
                 </View>
                 <Switch
@@ -635,6 +658,27 @@ export default function VendorAnnouncementManager({ vendorAddress }: { vendorAdd
                                 }}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    {(() => {
+                                        const statusColors = getApprovalStatusColor(announcement.status || announcement.approval_status);
+                                        return (
+                                            <Text
+                                                style={{
+                                                    color: statusColors.text,
+                                                    backgroundColor: statusColors.bg,
+                                                    borderColor: statusColors.border,
+                                                    borderWidth: 1,
+                                                    borderRadius: 999,
+                                                    overflow: 'hidden',
+                                                    paddingHorizontal: 8,
+                                                    paddingVertical: 3,
+                                                    fontWeight: '800',
+                                                    fontSize: 11,
+                                                }}
+                                            >
+                                                {getApprovalStatusLabel(announcement.status || announcement.approval_status)}
+                                            </Text>
+                                        );
+                                    })()}
                                     <Text
                                         style={{
                                             color: announcement.is_active ? '#15803D' : '#64748B',

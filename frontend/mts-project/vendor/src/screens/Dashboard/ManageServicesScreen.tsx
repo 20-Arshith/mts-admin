@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StyleSheet, Image } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import apiClient from '../../services/api';
-import { getVendorCategoryMeta } from '../../utils/categoryMeta';
+import { getVendorCategoryMeta, isVendorCustomCategoryIcon } from '../../utils/categoryMeta';
 
 export default function ManageServicesScreen() {
     const navigation = useNavigation<any>();
@@ -80,7 +80,11 @@ export default function ManageServicesScreen() {
                             <View key={service.id || index} style={styles.serviceCard}>
                                 <View style={styles.serviceHeader}>
                                     <View style={[styles.iconContainer, { backgroundColor: meta.bg }]}>
-                                        <MaterialIcons name={meta.icon as any} size={24} color={meta.color} />
+                                        {isVendorCustomCategoryIcon(service.category?.icon_name) ? (
+                                            <Image source={{ uri: service.category?.icon_name }} style={{ width: 24, height: 24, borderRadius: 4 }} resizeMode="contain" />
+                                        ) : (
+                                            <MaterialIcons name={meta.icon as any} size={24} color={meta.color} />
+                                        )}
                                     </View>
                                     <View style={styles.serviceInfo}>
                                         <Text style={styles.serviceTitle}>{service.service_title || service.category?.category_name}</Text>

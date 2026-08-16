@@ -132,7 +132,7 @@ const buildTimeSlots = (startTime, endTime) => {
             value,
             label: formatTimeLabel(value),
         });
-        current += 60;
+        current += 120; // 2-hour slots Urban Company style
     }
 
     return slots;

@@ -144,6 +144,13 @@ class UserRepository extends BaseRepository {
             }
         });
     }
+
+    async updatePushToken(userId, expoPushToken) {
+        return await this.model.update({
+            where: { user_id: userId },
+            data: { expo_push_token: expoPushToken }
+        });
+    }
 }
 
 module.exports = new UserRepository();

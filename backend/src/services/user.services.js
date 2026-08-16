@@ -169,10 +169,14 @@ exports.getVendorProfilePublic = async (vendorId) => {
         address: vendor.address,
         logo_url: vendor.logo_url,
         banner_url: vendor.banner_url,
+        mobile: vendor.mobile || vendor.user?.mobile,
+        whatsapp_number: vendor.whatsapp_number,
         rating: totalReviews > 0 ? Number((totalRatingSum / totalReviews).toFixed(1)) : null,
         review_count: totalReviews,
         gallery: vendor.gallery || [],
-        reels: vendor.reels || []
+        reels: (vendor.reels || []).filter(
+            (reel) => reel.approval_status === 'approved' && reel.status === 'approved'
+        )
     };
 };
 

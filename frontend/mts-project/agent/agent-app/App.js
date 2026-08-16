@@ -1,6 +1,6 @@
-import "./global.css";
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,7 +16,39 @@ import TabNavigator from './src/navigation/TabNavigator';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+class AppErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { error };
+    }
+
+    componentDidCatch(error, info) {
+        console.error('Agent app crashed', error, info);
+    }
+
+    render() {
+        if (this.state.error) {
+            return (
+                <SafeAreaProvider>
+                    <ScrollView contentContainerStyle={styles.errorContainer}>
+                        <Text style={styles.errorTitle}>Unable to open MTS Agent</Text>
+                        <Text style={styles.errorMessage}>
+                            {this.state.error?.message || 'A startup error occurred. Please contact support.'}
+                        </Text>
+                    </ScrollView>
+                </SafeAreaProvider>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+function AgentApp() {
     return (
         <SafeAreaProvider>
             <NavigationContainer>
@@ -43,3 +75,31 @@ export default function App() {
         </SafeAreaProvider>
     );
 }
+
+export default function App() {
+    return (
+        <AppErrorBoundary>
+            <AgentApp />
+        </AppErrorBoundary>
+    );
+}
+
+const styles = StyleSheet.create({
+    errorContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        padding: 24,
+        backgroundColor: '#f8fafc',
+    },
+    errorTitle: {
+        color: '#0f172a',
+        fontSize: 22,
+        fontWeight: '800',
+        marginBottom: 12,
+    },
+    errorMessage: {
+        color: '#475569',
+        fontSize: 15,
+        lineHeight: 22,
+    },
+});

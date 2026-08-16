@@ -99,7 +99,7 @@ class BookingRepository extends BaseRepository {
                     lt: end,
                 },
                 booking_status: {
-                    notIn: ['cancelled', 'completed'],
+                    notIn: ['cancelled'],
                 },
                 vendor_service: {
                     vendor_id: vendorId,
@@ -117,7 +117,7 @@ class BookingRepository extends BaseRepository {
             where: {
                 scheduled_at: scheduledAt,
                 booking_status: {
-                    notIn: ['cancelled', 'completed'],
+                    notIn: ['cancelled'],
                 },
                 vendor_service: {
                     vendor_id: vendorId,

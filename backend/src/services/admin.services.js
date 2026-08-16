@@ -2,6 +2,7 @@ const prisma = require('../config/db');
 const logger = require('../utils/logger');
 const { ROLES } = require('../utils/constants');
 const { createValidationError, validateAgentOnboardingInput } = require('../utils/validation');
+const authService = require('./auth.services');
 
 const normalizeApprovalStatus = (value) => {
     const normalized = String(value || '').trim().toLowerCase();
@@ -32,8 +33,30 @@ const mapServiceStatus = (service) => {
 };
 
 const normalizeCategoryIcon = (value) => {
-    const normalized = String(value || '').trim().toLowerCase();
-    return normalized || 'general';
+    const trimmed = String(value || '').trim();
+    if (!trimmed) {
+        return 'general';
+    }
+
+    if (trimmed.startsWith('data:image/') || /^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+
+    return trimmed.toLowerCase();
+};
+
+const ensureContentApprovalColumns = async () => {
+    await prisma.$executeRawUnsafe(`
+        ALTER TABLE "reels"
+        ADD COLUMN IF NOT EXISTS "approval_status" TEXT NOT NULL DEFAULT 'pending',
+        ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'pending'
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        ALTER TABLE "announcements"
+        ADD COLUMN IF NOT EXISTS "approval_status" TEXT NOT NULL DEFAULT 'pending',
+        ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'pending'
+    `);
 };
 
 const ensureServiceCategoryIconColumn = async () => {
@@ -253,6 +276,34 @@ exports.getAllVendors = async () => {
     });
 };
 
+exports.onboardVendor = async (vendorInput) => {
+    const result = await authService.registerVendor(vendorInput, { createdByAdmin: true });
+    const vendorId = result?.vendor?.vendor_id || result?.user?.user_id;
+
+    if (!vendorId) {
+        return result;
+    }
+
+    return await prisma.vendor.findUnique({
+        where: { vendor_id: Number(vendorId) },
+        include: {
+            user: {
+                include: { profile: true }
+            },
+            agent: {
+                select: { name: true, mobile: true, referral_code: true, approval_status: true }
+            },
+            category: true,
+            services: {
+                include: { category: true }
+            },
+            availability_schedule: {
+                orderBy: { day_of_week: 'asc' }
+            }
+        },
+    });
+};
+
 exports.updateVendorStatus = async (vendorId, status) => {
     const normalizedStatus = normalizeApprovalStatus(status);
     if (!['pending', 'approved', 'rejected'].includes(normalizedStatus)) {
@@ -261,7 +312,10 @@ exports.updateVendorStatus = async (vendorId, status) => {
 
     return await prisma.vendor.update({
         where: { vendor_id: parseInt(vendorId, 10) },
-        data: { approval_status: normalizedStatus }
+        data: {
+            approval_status: normalizedStatus,
+            ...(normalizedStatus === 'approved' ? { is_available: true } : {}),
+        }
     });
 };
 
@@ -358,6 +412,7 @@ exports.getAllBookings = async () => {
 };
 
 exports.getAllReels = async (query = {}) => {
+    await ensureContentApprovalColumns();
     const page = Math.max(1, parseInt(query.page, 10) || 1);
     const limit = Math.min(24, Math.max(1, parseInt(query.limit, 10) || 12));
     const skip = (page - 1) * limit;
@@ -400,9 +455,100 @@ exports.getAllReels = async (query = {}) => {
     };
 };
 
+exports.updateReelStatus = async (id, status) => {
+    await ensureContentApprovalColumns();
+    const normalizedStatus = normalizeApprovalStatus(status);
+    if (!['pending', 'approved', 'rejected'].includes(normalizedStatus)) {
+        throw new Error('Invalid reel status');
+    }
+
+    return await prisma.reel.update({
+        where: { id: parseInt(id, 10) },
+        data: {
+            approval_status: normalizedStatus,
+            status: normalizedStatus,
+        },
+        include: {
+            vendor: {
+                select: {
+                    business_name: true,
+                    owner_name: true,
+                    mobile: true,
+                    category: { select: { category_name: true } },
+                    user: { select: { full_name: true, email: true } },
+                },
+            },
+        },
+    });
+};
+
 exports.deleteReel = async (id) => {
     return await prisma.reel.delete({
         where: { id: parseInt(id, 10) }
+    });
+};
+
+exports.getAllAnnouncements = async (query = {}) => {
+    await ensureContentApprovalColumns();
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 24));
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+        prisma.announcement.findMany({
+            skip,
+            take: limit,
+            include: {
+                vendor: {
+                    select: {
+                        vendor_id: true,
+                        business_name: true,
+                        owner_name: true,
+                        mobile: true,
+                        user: { select: { full_name: true, email: true } },
+                    },
+                },
+            },
+            orderBy: { created_at: 'desc' },
+        }),
+        prisma.announcement.count(),
+    ]);
+
+    return {
+        items,
+        meta: {
+            page,
+            limit,
+            total,
+            hasMore: skip + items.length < total,
+        },
+    };
+};
+
+exports.updateAnnouncementStatus = async (id, status) => {
+    await ensureContentApprovalColumns();
+    const normalizedStatus = normalizeApprovalStatus(status);
+    if (!['pending', 'approved', 'rejected'].includes(normalizedStatus)) {
+        throw new Error('Invalid announcement status');
+    }
+
+    return await prisma.announcement.update({
+        where: { announcement_id: parseInt(id, 10) },
+        data: {
+            approval_status: normalizedStatus,
+            status: normalizedStatus,
+        },
+        include: {
+            vendor: {
+                select: {
+                    vendor_id: true,
+                    business_name: true,
+                    owner_name: true,
+                    mobile: true,
+                    user: { select: { full_name: true, email: true } },
+                },
+            },
+        },
     });
 };
 

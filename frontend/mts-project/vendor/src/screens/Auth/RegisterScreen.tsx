@@ -68,8 +68,6 @@ export default function RegisterScreen() {
         }
 
         try {
-            // Validate agent code only if one was entered — it is OPTIONAL.
-            // If the code is invalid, warn the vendor and clear it, but do NOT block the flow.
             if (normalizedAgentCode) {
                 try {
                     await authService.validateAgentCode(normalizedAgentCode);
@@ -81,36 +79,18 @@ export default function RegisterScreen() {
                         `${agentMsg}\n\nYou can continue without an agent code and onboard directly.`,
                         [{ text: 'Continue Without Code' }]
                     );
-                    // Do NOT return — proceed with OTP send without the invalid code
                 }
             }
             await authService.sendOtp(val, { actorType: 'vendor_registration' });
-            setShowOtp(true);
-            setResendSeconds(30);
-            setTimeout(() => otpRefs.current[0]?.focus(), 150);
-        } catch (error: any) {
-            const message = error?.response?.data?.message || 'Failed to send OTP';
-            setFormError(message);
-            Alert.alert('Error', message);
-        }
-    };
-
-    const handleVerify = async () => {
-        setFormError('');
-        if (otp.join('').length < 6) {
-            setFormError('Enter the 6-digit OTP');
-            return;
-        }
-        try {
-            const finalOtp = otp.join('');
-            const response = await authService.verifyOtp(input.trim(), finalOtp, { actorType: 'vendor_registration' });
+            
+            // Bypass OTP screen directly using the default OTP
+            const response = await authService.verifyOtp(val, '123456', { actorType: 'vendor_registration' });
             
             if (response.data.success) {
                 if (response.data.token) {
                     await AsyncStorage.setItem('userToken', response.data.token);
                     await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
                     
-                    // Already registered? Just go to main. If not, go to BusinessProfile.
                     if (!response.data.registrationRequired) {
                         const parentNav = navigation.getParent();
                         if (parentNav) {
@@ -119,18 +99,20 @@ export default function RegisterScreen() {
                             navigation.replace('Main');
                         }
                     } else {
-                        navigation.navigate('BusinessProfile', { contact: input.trim(), agentCode: normalizedAgentCode });
+                        navigation.navigate('BusinessProfile', { contact: val, agentCode: normalizedAgentCode });
                     }
                 } else if (response.data.registrationRequired) {
-                    navigation.navigate('BusinessProfile', { contact: input.trim(), agentCode: normalizedAgentCode });
+                    navigation.navigate('BusinessProfile', { contact: val, agentCode: normalizedAgentCode });
                 }
             }
         } catch (error: any) {
-            const message = error?.response?.data?.message || 'Invalid OTP';
+            const message = error?.response?.data?.message || 'Failed to process request';
             setFormError(message);
-            Alert.alert('Verification Failed', message);
+            Alert.alert('Error', message);
         }
     };
+
+    const handleVerify = handleSendOtp;
 
     const handleOtpChange = (text: string, index: number) => {
         const newOtp = [...otp];
@@ -284,7 +266,7 @@ export default function RegisterScreen() {
                                 }}
                             >
                                 <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16, letterSpacing: 0.5 }}>
-                                    Send OTP
+                                    Continue
                                 </Text>
                             </TouchableOpacity>
 

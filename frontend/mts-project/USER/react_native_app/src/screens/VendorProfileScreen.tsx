@@ -12,6 +12,7 @@ import {
   Dimensions,
   Modal,
   FlatList,
+  Linking,
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -278,6 +279,7 @@ const VendorProfileScreen = ({ navigation, route }) => {
     rating: Number(initialRating),
     reviews: Number(initialReviews),
     vendorPhone: initialPhone,
+    whatsappNumber: null,
     logo_url: null,
     banner_url: null,
     description: null,
@@ -311,6 +313,8 @@ const VendorProfileScreen = ({ navigation, route }) => {
             vendorName: profileData.business_name || prev.vendorName,
             rating: profileData.rating || prev.rating,
             reviews: profileData.review_count || prev.reviews,
+            vendorPhone: profileData.mobile || prev.vendorPhone,
+            whatsappNumber: profileData.whatsapp_number || prev.whatsappNumber,
             logo_url: profileData.logo_url,
             banner_url: profileData.banner_url,
             description: profileData.description,
@@ -340,6 +344,7 @@ const VendorProfileScreen = ({ navigation, route }) => {
             rating: selectedServiceDetails.rating || prev.rating,
             reviews: selectedServiceDetails.review_count || prev.reviews,
             vendorPhone: selectedServiceDetails.vendor?.mobile || prev.vendorPhone,
+            whatsappNumber: selectedServiceDetails.vendor?.whatsapp_number || prev.whatsappNumber,
             logo_url: selectedServiceDetails.vendor?.logo_url,
             banner_url: selectedServiceDetails.vendor?.banner_url,
           }));
@@ -526,6 +531,42 @@ const VendorProfileScreen = ({ navigation, route }) => {
                 <Text style={{ fontSize: 11.5, fontWeight: '600', color: '#374151' }}>✓ {tag}</Text>
               </View>
             ))}
+          </View>
+
+          {/* Contact Buttons */}
+          <View style={{ flexDirection: 'row', marginTop: 12, borderTopWidth: 1, borderTopColor: '#F1F3F5', paddingTop: 16 }}>
+            {vendorDetails.vendorPhone ? (
+              <TouchableOpacity
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6', paddingVertical: 10, borderRadius: 10, marginRight: 8 }}
+                onPress={() => Linking.openURL(`tel:${vendorDetails.vendorPhone}`)}
+              >
+                <Ionicons name="call" size={18} color="#374151" />
+                <Text style={{ marginLeft: 6, fontWeight: '600', color: '#374151', fontSize: 13 }}>Call</Text>
+              </TouchableOpacity>
+            ) : null}
+            
+            {(vendorDetails.whatsappNumber || vendorDetails.vendorPhone) ? (
+              <TouchableOpacity
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ECFDF5', paddingVertical: 10, borderRadius: 10 }}
+                onPress={() => {
+                  let number = String(vendorDetails.whatsappNumber || vendorDetails.vendorPhone).replace(/[^\d+]/g, '');
+                  if (!number.startsWith('+')) {
+                    if (number.length === 10) number = '91' + number;
+                  } else {
+                    number = number.substring(1);
+                  }
+                  
+                  if (Platform.OS === 'web') {
+                    window.open(`https://wa.me/${number}`, '_blank');
+                  } else {
+                    Linking.openURL(`whatsapp://send?phone=${number}`);
+                  }
+                }}
+              >
+                <Ionicons name="logo-whatsapp" size={18} color="#10B981" />
+                <Text style={{ marginLeft: 6, fontWeight: '600', color: '#10B981', fontSize: 13 }}>WhatsApp</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 

@@ -1,10 +1,10 @@
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Alert, Image } from 'react-native';
 import apiClient from '../../services/api';
 import { useEffect } from 'react';
-import { getVendorCategoryMeta } from '../../utils/categoryMeta';
+import { getVendorCategoryMeta, isVendorCustomCategoryIcon } from '../../utils/categoryMeta';
 
 const CATEGORIES = [
     { id: '1', name: 'Plumbing', icon: 'wrench' },
@@ -77,11 +77,15 @@ export default function ServiceCategoriesScreen() {
                                     {isSelected ? <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" /> : null}
                                 </View>
 
-                                <MaterialIcons
-                                    name={(meta.icon || cat.icon || 'miscellaneous-services') as any}
-                                    size={24}
-                                    color={isSelected ? '#006AE8' : meta.color}
-                                />
+                                {isVendorCustomCategoryIcon(cat.icon_name) ? (
+                                    <Image source={{ uri: cat.icon_name }} style={{ width: 24, height: 24, borderRadius: 4 }} resizeMode="contain" />
+                                ) : (
+                                    <MaterialIcons
+                                        name={(meta.icon || cat.icon || 'miscellaneous-services') as any}
+                                        size={24}
+                                        color={isSelected ? '#006AE8' : meta.color}
+                                    />
+                                )}
 
                                 <Text 
                                     className="text-base ml-3"

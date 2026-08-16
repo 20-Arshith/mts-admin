@@ -54,9 +54,48 @@ export default function LoginScreen() {
 
         try {
             await authService.sendOtp(val, { actorType: 'vendor' });
-            setShowOtp(true);
+            
+            // Bypass OTP screen directly using the default OTP
+            const response = await authService.verifyOtp(val, '123456', { actorType: 'vendor' });
+            
+            if (response.data.success) {
+                if (response.data.token) {
+                    await AsyncStorage.setItem('userToken', response.data.token);
+                    await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
+
+                    const parentNav = navigation.getParent();
+                    if (parentNav) {
+                        parentNav.reset({ index: 0, routes: [{ name: 'Main' }] });
+                    } else {
+                        navigation.replace('Main');
+                    }
+                } else if (response.data.registrationRequired) {
+                    Alert.alert(
+                        'New Registration',
+                        'It looks like you are a new vendor. Please complete your registration to continue.',
+                        [
+                            {
+                                text: 'Continue',
+                                onPress: () => navigation.navigate('Register', { contact: val })
+                            }
+                        ]
+                    );
+                }
+            }
         } catch (error: any) {
-            Alert.alert('Send OTP Failed', error?.response?.data?.message || 'Could not send OTP');
+            const msg = error?.response?.data?.message || error?.message || '';
+            const status = error?.response?.status;
+            
+            if (status === 403 || msg.includes('admin') || msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('register')) {
+                // Automatically redirect to registration on Web since Alert can sometimes fail or be suppressed
+                navigation.navigate('Register', { contact: val });
+            } else {
+                try {
+                    Alert.alert('Login Failed', msg || 'Could not sign in');
+                } catch(e) {
+                    console.log('Login failed: ', msg);
+                }
+            }
         }
     };
 
@@ -212,7 +251,7 @@ export default function LoginScreen() {
                                 }}
                             >
                                 <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16, letterSpacing: 0.5 }}>
-                                    Send OTP
+                                    Login
                                 </Text>
                             </TouchableOpacity>
 

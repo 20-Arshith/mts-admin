@@ -8,6 +8,8 @@ class ReelRepository extends BaseRepository {
     buildActiveReelWhere(where = {}) {
         return {
             ...where,
+            approval_status: 'approved',
+            status: 'approved',
             expiry_date: {
                 gte: new Date(),
             },
@@ -38,7 +40,10 @@ class ReelRepository extends BaseRepository {
                             }
                         },
                         user: {
-                            select: { full_name: true, mobile: true }
+                            select: { 
+                                full_name: true,
+                                mobile: true
+                            }
                         }
                     }
                 }
@@ -67,14 +72,14 @@ class ReelRepository extends BaseRepository {
         });
     }
 
-    async incrementViewCount(reelId) {
+    async incrementViewCount(id) {
         return await this.model.update({
-            where: { id: reelId },
+            where: { id },
             data: {
                 view_count: {
-                    increment: 1,
-                },
-            },
+                    increment: 1
+                }
+            }
         });
     }
 }

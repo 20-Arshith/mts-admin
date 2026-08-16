@@ -1,7 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, ActivityIndicator, RefreshControl, StyleSheet, Dimensions, StatusBar, Alert, Platform } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { PieChart } from 'react-native-chart-kit';
 import { Share, Plus, Settings, MapPin, ChevronDown } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -109,16 +108,9 @@ export default function HomeScreen() {
     const activeVendors = vendors.filter((vendor) => vendor.approval_status === 'approved').length;
     const pendingVendors = vendors.filter((vendor) => vendor.approval_status === 'pending').length;
 
-    const chartData = [
-        { name: 'Active', population: activeVendors || 1, color: '#059669', legendFontColor: '#1f2937', legendFontSize: 13 },
-        { name: 'Pending', population: pendingVendors || 0, color: '#fbbf24', legendFontColor: '#6b7280', legendFontSize: 13 },
-    ];
-
-    const chartConfig = {
-        backgroundGradientFromOpacity: 0,
-        backgroundGradientToOpacity: 0,
-        color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-    };
+    const totalTrackedVendors = Math.max(activeVendors + pendingVendors, 1);
+    const activePercent = Math.round((activeVendors / totalTrackedVendors) * 100);
+    const pendingPercent = Math.round((pendingVendors / totalTrackedVendors) * 100);
 
     const handleShareReferral = () => {
         const message = `Join MTS India as a vendor! Use my referral code: ${referralCode} to get started.`;
@@ -274,19 +266,27 @@ export default function HomeScreen() {
                         {vendors.length > 0 && (
                             <View style={styles.card}>
                                 <Text style={styles.cardTitle}>Vendor Distribution</Text>
-                                <View style={styles.chartContainer}>
-                                    <PieChart
-                                        data={chartData}
-                                        width={Math.min(width, 450) - 80}
-                                        height={180}
-                                        chartConfig={chartConfig}
-                                        accessor="population"
-                                        backgroundColor="transparent"
-                                        paddingLeft="15"
-                                        center={[10, 0]}
-                                        absolute
-                                        hasLegend
-                                    />
+                                <View style={styles.distributionList}>
+                                    <View style={styles.distributionRow}>
+                                        <View style={styles.distributionHeader}>
+                                            <View style={[styles.distributionDot, { backgroundColor: '#059669' }]} />
+                                            <Text style={styles.distributionLabel}>Active vendors</Text>
+                                            <Text style={styles.distributionValue}>{activeVendors}</Text>
+                                        </View>
+                                        <View style={styles.distributionTrack}>
+                                            <View style={[styles.distributionFill, { width: `${activePercent}%`, backgroundColor: '#059669' }]} />
+                                        </View>
+                                    </View>
+                                    <View style={styles.distributionRow}>
+                                        <View style={styles.distributionHeader}>
+                                            <View style={[styles.distributionDot, { backgroundColor: '#fbbf24' }]} />
+                                            <Text style={styles.distributionLabel}>Pending vendors</Text>
+                                            <Text style={styles.distributionValue}>{pendingVendors}</Text>
+                                        </View>
+                                        <View style={styles.distributionTrack}>
+                                            <View style={[styles.distributionFill, { width: `${pendingPercent}%`, backgroundColor: '#fbbf24' }]} />
+                                        </View>
+                                    </View>
                                 </View>
                             </View>
                         )}
@@ -575,9 +575,43 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 12,
     },
-    chartContainer: {
+    distributionList: {
+        gap: 16,
+    },
+    distributionRow: {
+        gap: 8,
+    },
+    distributionHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 10,
+    },
+    distributionDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginRight: 8,
+    },
+    distributionLabel: {
+        flex: 1,
+        color: '#334155',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    distributionValue: {
+        color: '#1e293b',
+        fontSize: 14,
+        fontWeight: '900',
+    },
+    distributionTrack: {
+        height: 10,
+        backgroundColor: '#e2e8f0',
+        borderRadius: 999,
+        overflow: 'hidden',
+    },
+    distributionFill: {
+        minWidth: 4,
+        height: '100%',
+        borderRadius: 999,
     },
     modalOverlay: {
         flex: 1,

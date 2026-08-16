@@ -55,6 +55,14 @@
           "cameraPermission": "The app needs access to your camera to let you take photos for your services and portfolio."
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#007BFF",
+          "defaultChannel": "mts-default"
+        }
+      ],
       "./plugins/withAndroidHttpSupport"
     ],
     "experiments": {

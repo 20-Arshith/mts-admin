@@ -14,7 +14,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import ShadowIconBox from '../components/ShadowIconBox';
-import { getCategoryMeta, getServiceMeta } from '../utils/serviceHelpers';
+import { getCategoryMeta, getServiceMeta, isCustomCategoryIcon } from '../utils/serviceHelpers';
 import api from '../utils/api';
 import { deriveShortLabelFromAddress } from '../utils/location';
 
@@ -282,6 +282,7 @@ const SearchScreen = ({ route, navigation }: any) => {
             vendor: service.vendor?.business_name || 'Vendor',
             vendorId: service.vendor?.vendor_id,
             category: service.category?.category_name || 'Other',
+            categoryIcon: service.category?.icon_name,
             rating: ratingValue,
             reviewCount,
             price: priceValue,
@@ -423,6 +424,7 @@ const SearchScreen = ({ route, navigation }: any) => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {filters.map((filterItem, index) => {
             const selected = selectedFilter === filterItem.label;
+            const hasCustomIcon = filterItem.label !== 'All' && isCustomCategoryIcon(filterItem.icon_name);
             const meta =
               filterItem.label === 'All'
                 ? { color: '#007BFF', icon: 'apps' }
@@ -440,11 +442,19 @@ const SearchScreen = ({ route, navigation }: any) => {
                   ...(selected ? { backgroundColor: meta.color, borderColor: meta.color } : {}),
                 }}
               >
-                <MaterialIcons
-                  name={meta.icon as any}
-                  size={15}
-                  color={selected ? '#FFFFFF' : meta.color}
-                />
+                {hasCustomIcon ? (
+                  <Image
+                    source={{ uri: filterItem.icon_name }}
+                    style={{ width: 16, height: 16, borderRadius: 8 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <MaterialIcons
+                    name={meta.icon as any}
+                    size={15}
+                    color={selected ? '#FFFFFF' : meta.color}
+                  />
+                )}
                 <Text className={`text-[13px] ${selected ? 'text-white font-semibold' : 'text-gray-700'}`}>
                   {filterItem.label}
                 </Text>
@@ -540,6 +550,7 @@ const SearchScreen = ({ route, navigation }: any) => {
         ) : (
           filteredResults.map((item, index) => {
             const meta = getServiceMeta(`${item.category} ${item.name}`);
+            const customCategoryUri = isCustomCategoryIcon(item.categoryIcon) ? item.categoryIcon : undefined;
             return (
               <TouchableOpacity
                 key={`${item.id}-${index}`}
@@ -572,7 +583,7 @@ const SearchScreen = ({ route, navigation }: any) => {
                          <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
                      </View>
                   ) : (
-                     <ShadowIconBox icon={meta.icon} color={meta.color} />
+                     <ShadowIconBox icon={meta.icon} color={meta.color} imageUri={customCategoryUri} />
                   )}
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>

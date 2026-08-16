@@ -48,6 +48,27 @@ exports.getVendors = async (req, res, next) => {
     }
 };
 
+exports.onboardVendor = async (req, res, next) => {
+    try {
+        const vendor = await adminService.onboardVendor(req.body || {});
+        res.status(201).json({
+            success: true,
+            message: 'Vendor onboarded successfully',
+            data: vendor,
+        });
+    } catch (error) {
+        if (
+            error.message === 'Selected service category does not exist' ||
+            error.message === 'Mobile number or email is required' ||
+            error.message === 'Full name is required' ||
+            error.message === 'Business name is required'
+        ) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+        next(error);
+    }
+};
+
 exports.updateVendorStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -112,12 +133,53 @@ exports.getReels = async (req, res, next) => {
     }
 };
 
+exports.updateReelStatus = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const reel = await adminService.updateReelStatus(id, status);
+        res.status(200).json({ success: true, message: `Reel status updated to ${reel.status}`, data: reel });
+    } catch (error) {
+        if (error.message === 'Invalid reel status') {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+        next(error);
+    }
+};
+
 exports.deleteReel = async (req, res, next) => {
     try {
         const { id } = req.params;
         await adminService.deleteReel(id);
         res.status(200).json({ success: true, message: 'Reel deleted by admin' });
     } catch (error) {
+        next(error);
+    }
+};
+
+exports.getAnnouncements = async (req, res, next) => {
+    try {
+        const announcements = await adminService.getAllAnnouncements(req.query);
+        res.status(200).json({ success: true, data: announcements.items, meta: announcements.meta });
+    } catch (error) {
+        next(error);
+    }
+};
+
+exports.updateAnnouncementStatus = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const announcement = await adminService.updateAnnouncementStatus(id, status);
+        res.status(200).json({
+            success: true,
+            message: `Broadcast status updated to ${announcement.status}`,
+            data: announcement,
+        });
+    } catch (error) {
+        if (error.message === 'Invalid announcement status') {
+            return res.status(400).json({ success: false, message: error.message });
+        }
         next(error);
     }
 };

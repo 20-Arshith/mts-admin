@@ -8,9 +8,14 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { vendorService, uploadService } from '../../services/api';
-import { getVendorCategoryMeta } from '../../utils/categoryMeta';
+import { getVendorCategoryMeta, isVendorCustomCategoryIcon } from '../../utils/categoryMeta';
 
 const MAX_SERVICE_IMAGES = 5;
+
+const normalizeCategoryId = (value: any) => {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
 
 async function buildUploadFormData(uri: string, assetType: string): Promise<FormData> {
     const fd = new FormData() as any;
@@ -86,7 +91,8 @@ export default function AddServiceScreen() {
         setServiceName(existingService.service_title || '');
         setDescription(existingService.description || '');
         setPrice(existingService.price_min ? String(existingService.price_min) : '');
-        setSelectedCategory(existingService.category || null);
+        const existingCategoryId = normalizeCategoryId(existingService.category_id || existingService.category?.category_id);
+        setSelectedCategory(existingService.category ? { ...existingService.category, category_id: existingCategoryId } : null);
         const existing: string[] = Array.isArray(existingService.image_urls) ? existingService.image_urls : [];
         setServiceImages(existing);
         setLocalPreviews(existing);
@@ -94,7 +100,8 @@ export default function AddServiceScreen() {
 
     useEffect(() => {
         if (!existingService || categories.length === 0) return;
-        const match = categories.find((c) => c.category_id === existingService.category_id);
+        const existingCategoryId = normalizeCategoryId(existingService.category_id || existingService.category?.category_id);
+        const match = categories.find((c) => normalizeCategoryId(c.category_id) === existingCategoryId);
         if (match) setSelectedCategory(match);
     }, [categories, existingService]);
 
@@ -157,8 +164,13 @@ export default function AddServiceScreen() {
         }
         setLoading(true);
         try {
+            const selectedCategoryId = normalizeCategoryId(selectedCategory.category_id);
+            if (!selectedCategoryId) {
+                Alert.alert('Missing Fields', 'Please choose a valid service category.');
+                return;
+            }
             const payload = {
-                category_id: selectedCategory.category_id,
+                category_id: selectedCategoryId,
                 service_title: trimmedName,
                 description: description.trim(),
                 price_min: numericPrice,
@@ -200,19 +212,28 @@ export default function AddServiceScreen() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
                     {categories.map((cat) => {
                         const meta = getVendorCategoryMeta(cat.icon_name, cat.category_name);
-                        const selected = selectedCategory?.category_id === cat.category_id;
+                        const selected = normalizeCategoryId(selectedCategory?.category_id) === normalizeCategoryId(cat.category_id);
+                        const customIcon = isVendorCustomCategoryIcon(cat.icon_name);
                         return (
                             <TouchableOpacity
                                 key={cat.category_id}
                                 onPress={() => setSelectedCategory(cat)}
                                 style={[styles.chip, selected && styles.chipSelected]}
                             >
-                                <MaterialIcons
-                                    name={meta.icon as any}
-                                    size={16}
-                                    color={selected ? '#FFFFFF' : meta.color}
-                                    style={{ marginRight: 6 }}
-                                />
+                                {customIcon ? (
+                                    <Image
+                                        source={{ uri: cat.icon_name }}
+                                        resizeMode="cover"
+                                        style={{ width: 18, height: 18, borderRadius: 9, marginRight: 6 }}
+                                    />
+                                ) : (
+                                    <MaterialIcons
+                                        name={meta.icon as any}
+                                        size={16}
+                                        color={selected ? '#FFFFFF' : meta.color}
+                                        style={{ marginRight: 6 }}
+                                    />
+                                )}
                                 <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
                                     {cat.category_name}
                                 </Text>

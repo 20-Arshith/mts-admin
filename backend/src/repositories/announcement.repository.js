@@ -12,6 +12,8 @@ class AnnouncementRepository extends BaseRepository {
         return await this.model.findMany({
             where: {
                 is_active: true,
+                approval_status: 'approved',
+                status: 'approved',
                 start_at: { lte: now },
                 OR: [
                     { expires_at: null },

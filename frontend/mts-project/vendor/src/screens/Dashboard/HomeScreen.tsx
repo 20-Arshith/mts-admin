@@ -19,6 +19,7 @@ import apiClient, { bookingService } from '../../services/api';
 import { syncVendorLiveLocation } from '../../utils/location';
 import { getVendorCategoryMeta } from '../../utils/categoryMeta';
 import VendorAnnouncementManager from '../../components/VendorAnnouncementManager';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 function getVendorRecord(value: any) {
     return value?.vendor ?? value ?? null;
@@ -48,6 +49,8 @@ export default function HomeScreen() {
     const navigation = useNavigation<any>();
     const { width: screenWidth } = useWindowDimensions();
     const insets = useSafeAreaInsets();
+    const { expoPushToken } = usePushNotifications();
+
     const ratingScrollRef = useRef<ScrollView>(null);
     const [isAvailable, setIsAvailable] = useState(false);
     const [userData, setUserData] = useState<any>(null);
@@ -131,6 +134,14 @@ export default function HomeScreen() {
     useEffect(() => {
         fetchProfileAndStats(true);
     }, []);
+
+    useEffect(() => {
+        if (expoPushToken && userData) {
+            apiClient.patch('/users/push-token', { expo_push_token: expoPushToken }).catch(() => {
+                // Ignore failure if it couldn't update token
+            });
+        }
+    }, [expoPushToken, userData]);
 
     useFocusEffect(
         useCallback(() => {
@@ -606,7 +617,11 @@ export default function HomeScreen() {
                                             elevation: 8,
                                         }}
                                     >
-                                        <MaterialIcons name={meta.icon as any} size={28} color={meta.color} />
+                                        {category.icon_name && (category.icon_name.startsWith('data:image/') || /^https?:\/\//i.test(category.icon_name)) ? (
+                                            <Image source={{ uri: category.icon_name }} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="contain" />
+                                        ) : (
+                                            <MaterialIcons name={meta.icon as any} size={28} color={meta.color} />
+                                        )}
                                     </View>
                                     <Text
                                         style={{

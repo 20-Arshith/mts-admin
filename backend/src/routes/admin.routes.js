@@ -14,6 +14,7 @@ router.get('/agents', adminController.getAgents);
 router.post('/agents/onboard', adminController.onboardAgent);
 router.patch('/agents/:id/status', adminController.updateAgentStatus);
 router.get('/vendors', adminController.getVendors);
+router.post('/vendors/onboard', adminController.onboardVendor);
 router.patch('/vendors/:id/status', adminController.updateVendorStatus);
 router.get('/payin', adminController.getPayins);
 router.get('/payout', adminController.getPayouts);
@@ -22,7 +23,10 @@ router.get('/payouts', adminController.getPayouts);
 router.patch('/payouts/:id/status', adminController.updatePayoutStatus);
 router.get('/bookings', adminController.getBookings);
 router.get('/reels', adminController.getReels);
+router.patch('/reels/:id/status', adminController.updateReelStatus);
 router.delete('/reels/:id', adminController.deleteReel);
+router.get('/announcements', adminController.getAnnouncements);
+router.patch('/announcements/:id/status', adminController.updateAnnouncementStatus);
 
 // Service Review
 router.get('/categories', adminController.getServiceCategories);

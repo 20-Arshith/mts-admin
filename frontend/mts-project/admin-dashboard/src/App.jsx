@@ -54,8 +54,10 @@ import mtsLogo from '../../agent/agent-app/assets/logo.png';
 import {
   ADMIN_AUTH_EXPIRED_EVENT,
   ADMIN_AUTH_STORAGE_KEY,
+  API_BASE_URL,
   adminApi as api,
   clearAdminSession,
+  getStoredAdminToken,
   publicApi,
 } from './config/api';
 
@@ -96,6 +98,9 @@ const createEmptyVendorForm = () => ({
   email: '',
   whatsapp_number: '',
   category_id: '',
+  service_name: '',
+  service_price: '',
+  service_description: '',
   address: '',
   description: '',
   agent_code: '',
@@ -108,6 +113,9 @@ const sanitizeVendorForm = (formData) => ({
   email: formData.email.trim().toLowerCase(),
   whatsapp_number: formData.whatsapp_number.trim(),
   category_id: String(formData.category_id || '').trim(),
+  service_name: formData.service_name.trim(),
+  service_price: String(formData.service_price || '').trim(),
+  service_description: formData.service_description.trim(),
   address: formData.address.trim(),
   description: formData.description.trim(),
   agent_code: formData.agent_code.trim().toUpperCase(),
@@ -138,6 +146,13 @@ const validateVendorForm = (formData) => {
 
   if (sanitized.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitized.email)) {
     return { sanitized, message: 'Please enter a valid email address.' };
+  }
+
+  if (sanitized.service_price) {
+    const servicePrice = Number(sanitized.service_price);
+    if (!Number.isFinite(servicePrice) || servicePrice < 0) {
+      return { sanitized, message: 'Service price must be a valid non-negative number.' };
+    }
   }
 
   if (!sanitized.address) {
@@ -267,11 +282,42 @@ const isCustomCategoryIcon = (iconName = '') => {
   return normalized.startsWith('data:image/') || /^https?:\/\//i.test(normalized);
 };
 
+const uploadCategoryIcon = async (file) => {
+  const formData = new FormData();
+  formData.append('asset_type', 'category_icon');
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/uploads/image`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${getStoredAdminToken()}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data?.data?.url) {
+    throw new Error(data?.message || 'Could not upload category icon.');
+  }
+
+  return data.data.url;
+};
+
 const CategoryIconAvatar = ({ iconName, categoryName = '', size = 'md' }) => {
-  if (isCustomCategoryIcon(iconName)) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [iconName]);
+
+  if (isCustomCategoryIcon(iconName) && !imageFailed) {
     return (
       <div className={`category-icon-avatar custom ${size === 'lg' ? 'large' : ''}`}>
-        <img src={iconName} alt={categoryName || 'Category icon'} />
+        <img
+          src={iconName}
+          alt={categoryName || 'Category icon'}
+          onError={() => setImageFailed(true)}
+        />
       </div>
     );
   }
@@ -297,6 +343,8 @@ const CategoryIconLibrary = ({
   const containerRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [draftIconName, setDraftIconName] = useState(value || 'general');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     setDraftIconName(value || 'general');
@@ -318,16 +366,25 @@ const CategoryIconLibrary = ({
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, [isOpen, value]);
 
-  const handleDeviceIcon = (file) => {
+  const handleDeviceIcon = async (file) => {
     if (!file) {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setDraftIconName(String(reader.result || 'general'));
-    };
-    reader.readAsDataURL(file);
+    setUploading(true);
+    setUploadError('');
+    try {
+      const uploadedUrl = await uploadCategoryIcon(file);
+      setDraftIconName(uploadedUrl);
+    } catch (error) {
+      console.error(error);
+      setUploadError(error.message || 'Could not upload category icon.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   return (
@@ -388,9 +445,10 @@ const CategoryIconLibrary = ({
               type="button"
               className="secondary-button btn-secondary"
               onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
             >
               <UploadCloud size={16} />
-              Upload
+              {uploading ? 'Uploading...' : 'Upload'}
             </button>
             <input
               ref={fileInputRef}
@@ -399,6 +457,7 @@ const CategoryIconLibrary = ({
               className="hidden-file-input"
               onChange={(event) => handleDeviceIcon(event.target.files?.[0])}
             />
+            {uploadError ? <p className="form-error category-icon-upload-error">{uploadError}</p> : null}
             <button
               type="button"
               className="secondary-button btn-secondary"
@@ -412,6 +471,7 @@ const CategoryIconLibrary = ({
             <button
               type="button"
               className="btn-primary"
+              disabled={uploading}
               onClick={() => {
                 onConfirm(draftIconName);
                 setIsOpen(false);
@@ -2742,6 +2802,9 @@ const VendorManagement = () => {
       ...(sanitized.mobile ? { mobile: sanitized.mobile } : {}),
       ...(sanitized.email ? { email: sanitized.email } : {}),
       ...(sanitized.category_id ? { categories: [Number(sanitized.category_id)] } : {}),
+      ...(sanitized.service_name ? { service_name: sanitized.service_name } : {}),
+      ...(sanitized.service_price ? { service_price: Number(sanitized.service_price) } : {}),
+      ...(sanitized.service_description ? { service_description: sanitized.service_description } : {}),
       whatsapp_number: sanitized.whatsapp_number || sanitized.mobile || undefined,
       description: sanitized.description,
       address: sanitized.address,
@@ -2749,7 +2812,7 @@ const VendorManagement = () => {
     };
 
     try {
-      await publicApi.post('/auth/register-vendor', payload);
+      await api.post('/vendors/onboard', payload);
       setSuccessMessage(`${sanitized.business_name} was added successfully.`);
       setFormData(createEmptyVendorForm());
       setShowForm(false);
@@ -2929,6 +2992,40 @@ const VendorManagement = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="field-label">Service Name</label>
+                <input
+                  type="text"
+                  className="field-input"
+                  placeholder="e.g. Deep Home Cleaning"
+                  value={formData.service_name}
+                  onChange={(event) => updateVendorFormField('service_name', event.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Service Price</label>
+                <input
+                  type="number"
+                  className="field-input"
+                  placeholder="e.g. 499"
+                  value={formData.service_price}
+                  onChange={(event) => updateVendorFormField('service_price', event.target.value)}
+                  min="0"
+                  step="1"
+                />
+              </div>
+
+              <div className="vendor-form-wide">
+                <label className="field-label">Service Description</label>
+                <textarea
+                  className="field-input textarea-input"
+                  placeholder="Optional details about the first service assigned to this vendor"
+                  value={formData.service_description}
+                  onChange={(event) => updateVendorFormField('service_description', event.target.value)}
+                />
               </div>
 
               <div className="vendor-form-wide">
@@ -3174,6 +3271,37 @@ const ReelManagement = () => {
     }
   };
 
+  const updateReelStatus = async (id, status) => {
+    const normalizedStatus = normalizeStatus(status);
+    setReels((current) =>
+      current.map((reel) =>
+        Number(reel.id) === Number(id)
+          ? { ...reel, approval_status: normalizedStatus, status: normalizedStatus }
+          : reel,
+      ),
+    );
+
+    try {
+      const response = await api.patch(`/reels/${id}/status`, { status: normalizedStatus });
+      const updatedReel = response.data?.data;
+      setReels((current) =>
+        current.map((reel) =>
+          Number(reel.id) === Number(id)
+            ? {
+                ...reel,
+                ...updatedReel,
+                approval_status: normalizeStatus(updatedReel?.approval_status || normalizedStatus),
+                status: normalizeStatus(updatedReel?.status || normalizedStatus),
+              }
+            : reel,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      loadReels();
+    }
+  };
+
   const handleLoadMore = () => {
     if (loading || loadingMore || !hasMore) {
       return;
@@ -3193,6 +3321,9 @@ const ReelManagement = () => {
       }
       if (filterBy === 'uncaptioned') {
         return !reel.caption;
+      }
+      if (['pending', 'approved', 'rejected'].includes(filterBy)) {
+        return normalizeStatus(reel.status || reel.approval_status) === filterBy;
       }
       return true;
     });
@@ -3227,6 +3358,9 @@ const ReelManagement = () => {
           onFilterChange={setFilterBy}
           filterOptions={[
             { value: 'all', label: 'All reels' },
+            { value: 'pending', label: 'Pending approval' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'rejected', label: 'Rejected' },
             { value: 'captioned', label: 'With caption' },
             { value: 'uncaptioned', label: 'Without caption' },
           ]}
@@ -3246,6 +3380,7 @@ const ReelManagement = () => {
                 <th>Preview</th>
                 <th>Vendor</th>
                 <th>Caption</th>
+                <th>Status</th>
                 <th>Created</th>
                 <th>Expiry</th>
                 <th>Actions</th>
@@ -3254,7 +3389,7 @@ const ReelManagement = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6">
+                  <td colSpan="7">
                     <EmptyState title="Loading reels" description="Fetching the latest reel batch for the admin console." />
                   </td>
                 </tr>
@@ -3273,9 +3408,32 @@ const ReelManagement = () => {
                       />
                     </td>
                     <td>{reel.caption || 'No caption added'}</td>
+                    <td>
+                      <span className={`badge badge-${normalizeStatus(reel.status || reel.approval_status)}`}>
+                        {formatStatusLabel(reel.status || reel.approval_status)}
+                      </span>
+                    </td>
                     <td>{formatDate(reel.created_at)}</td>
                     <td>{getTimeLeftLabel(reel.expiry_date)}</td>
                     <td className="actions">
+                      {normalizeStatus(reel.status || reel.approval_status) === 'pending' ? (
+                        <>
+                          <button
+                            type="button"
+                            className="action-btn approve"
+                            onClick={() => updateReelStatus(reel.id, 'approved')}
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                          <button
+                            type="button"
+                            className="action-btn reject"
+                            onClick={() => updateReelStatus(reel.id, 'rejected')}
+                          >
+                            <XCircle size={18} />
+                          </button>
+                        </>
+                      ) : null}
                       <button type="button" className="action-btn reject" onClick={() => deleteReel(reel.id)}>
                         <XCircle size={18} />
                       </button>
@@ -3284,7 +3442,7 @@ const ReelManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6">
+                  <td colSpan="7">
                     <EmptyState title="No reels found" description="Try changing the current search or filter." />
                   </td>
                 </tr>
@@ -3301,6 +3459,193 @@ const ReelManagement = () => {
         ) : null}
       </div>
       <ReelPlayerModal reel={selectedReel} onClose={() => setSelectedReel(null)} />
+    </div>
+  );
+};
+
+const BroadcastManagement = () => {
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [loading, setLoading] = useState(true);
+
+  const loadBroadcasts = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/announcements', { params: { limit: 50 } });
+      setBroadcasts(res.data.data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBroadcasts();
+  }, []);
+
+  const updateBroadcastStatus = async (id, status) => {
+    const normalizedStatus = normalizeStatus(status);
+    setBroadcasts((current) =>
+      current.map((broadcast) =>
+        Number(broadcast.announcement_id) === Number(id)
+          ? { ...broadcast, approval_status: normalizedStatus, status: normalizedStatus }
+          : broadcast,
+      ),
+    );
+
+    try {
+      const response = await api.patch(`/announcements/${id}/status`, { status: normalizedStatus });
+      const updatedBroadcast = response.data?.data;
+      setBroadcasts((current) =>
+        current.map((broadcast) =>
+          Number(broadcast.announcement_id) === Number(id)
+            ? {
+                ...broadcast,
+                ...updatedBroadcast,
+                approval_status: normalizeStatus(updatedBroadcast?.approval_status || normalizedStatus),
+                status: normalizeStatus(updatedBroadcast?.status || normalizedStatus),
+              }
+            : broadcast,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+      loadBroadcasts();
+    }
+  };
+
+  const filteredBroadcasts = useMemo(() => {
+    const searched = broadcasts.filter((broadcast) =>
+      includesQuery(search, [
+        broadcast.message,
+        broadcast.location_identifier,
+        broadcast.vendor?.business_name,
+        broadcast.vendor?.user?.full_name,
+      ]),
+    );
+    const filtered = searched.filter((broadcast) =>
+      statusFilter === 'all' ? true : normalizeStatus(broadcast.status || broadcast.approval_status) === statusFilter,
+    );
+
+    if (sortBy === 'oldest') {
+      return sortRows(filtered, (broadcast) => new Date(broadcast.created_at || 0).getTime(), 'asc');
+    }
+    if (sortBy === 'vendor-asc') {
+      return sortRows(filtered, (broadcast) => broadcast.vendor?.business_name || broadcast.vendor?.user?.full_name, 'asc');
+    }
+    return sortRows(filtered, (broadcast) => new Date(broadcast.created_at || 0).getTime(), 'desc');
+  }, [broadcasts, search, sortBy, statusFilter]);
+
+  return (
+    <div className="main-content">
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Broadcast Review</h1>
+          <p className="page-subtitle">Approve or reject vendor broadcasts and updates before users can see them.</p>
+        </div>
+      </header>
+
+      <div className="section-card glass">
+        <TableToolbar
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search vendor, location, or message"
+          filterValue={statusFilter}
+          onFilterChange={setStatusFilter}
+          filterOptions={[
+            { value: 'all', label: 'All statuses' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'rejected', label: 'Rejected' },
+          ]}
+          sortValue={sortBy}
+          onSortChange={setSortBy}
+          sortOptions={[
+            { value: 'newest', label: 'Newest first' },
+            { value: 'oldest', label: 'Oldest first' },
+            { value: 'vendor-asc', label: 'Vendor A-Z' },
+          ]}
+        />
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Vendor</th>
+                <th>Message</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Schedule</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="6">
+                    <EmptyState title="Loading broadcasts" description="Fetching vendor updates awaiting review." />
+                  </td>
+                </tr>
+              ) : filteredBroadcasts.length > 0 ? (
+                filteredBroadcasts.map((broadcast) => {
+                  const effectiveStatus = normalizeStatus(broadcast.status || broadcast.approval_status);
+                  return (
+                    <tr key={broadcast.announcement_id}>
+                      <td>
+                        <AvatarName
+                          name={broadcast.vendor?.business_name || broadcast.vendor?.user?.full_name || 'Vendor'}
+                          subtitle={broadcast.vendor?.mobile || broadcast.vendor?.user?.email || 'Broadcast'}
+                        />
+                      </td>
+                      <td>
+                        <div className="table-strong">{broadcast.message || 'No message'}</div>
+                        {broadcast.image_url ? (
+                          <a href={broadcast.image_url} target="_blank" rel="noreferrer" className="table-muted">
+                            View image
+                          </a>
+                        ) : null}
+                      </td>
+                      <td>{broadcast.location_identifier || 'All locations'}</td>
+                      <td>
+                        <span className={`badge badge-${effectiveStatus}`}>{formatStatusLabel(effectiveStatus)}</span>
+                      </td>
+                      <td>{formatDate(broadcast.start_at)} - {formatDate(broadcast.expires_at)}</td>
+                      <td className="actions">
+                        {effectiveStatus === 'pending' ? (
+                          <>
+                            <button
+                              type="button"
+                              className="action-btn approve"
+                              onClick={() => updateBroadcastStatus(broadcast.announcement_id, 'approved')}
+                            >
+                              <CheckCircle size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn reject"
+                              onClick={() => updateBroadcastStatus(broadcast.announcement_id, 'rejected')}
+                            >
+                              <XCircle size={18} />
+                            </button>
+                          </>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="6">
+                    <EmptyState title="No broadcasts found" description="Try changing the current search or filter." />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
@@ -3394,7 +3739,11 @@ const ServiceCategoryManagement = () => {
   const handleEditCategory = (category) => {
     setEditingCategory(category);
     setCategoryName(category.category_name || '');
-    setSelectedIconName(getCategoryIconOption(category.icon_name, category.category_name).value);
+    setSelectedIconName(
+      isCustomCategoryIcon(category.icon_name)
+        ? category.icon_name
+        : getCategoryIconOption(category.icon_name, category.category_name).value,
+    );
     setFormError('');
     setSuccessMessage('');
     requestAnimationFrame(() => {
@@ -4279,6 +4628,12 @@ function App() {
                 </NavLink>
               </li>
               <li>
+                <NavLink to="/broadcasts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                  <Megaphone size={20} />
+                  Broadcasts
+                </NavLink>
+              </li>
+              <li>
                 <NavLink to="/payin" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                   <BadgeIndianRupee size={20} />
                   Payin
@@ -4331,6 +4686,7 @@ function App() {
           <Route path="/services" element={<ServiceManagement />} />
           <Route path="/service-categories" element={<ServiceCategoryManagement />} />
           <Route path="/reels" element={<ReelManagement />} />
+          <Route path="/broadcasts" element={<BroadcastManagement />} />
           <Route path="/payin" element={<Payins />} />
           <Route path="/payout" element={<Payouts />} />
           <Route path="/payouts" element={<Navigate to="/payout" />} />

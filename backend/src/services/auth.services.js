@@ -187,7 +187,33 @@ exports.validateAgentReferralCode = async (agentCode) => {
 
 exports.getVendorActivationBlockReason = getVendorActivationBlockReason;
 
-exports.registerVendor = async (data) => {
+const normalizeOnboardedServiceDetails = (data = {}) => {
+    const serviceTitle = String(data.service_title || data.service_name || '').trim();
+    const serviceDescription = String(data.service_description || '').trim();
+    const rawPrice = data.service_price ?? data.price_min;
+    const priceText = rawPrice === undefined || rawPrice === null ? '' : String(rawPrice).trim();
+
+    if (!priceText) {
+        return {
+            serviceTitle: serviceTitle || 'General Service',
+            serviceDescription: serviceDescription || null,
+            servicePrice: null,
+        };
+    }
+
+    const servicePrice = Number(priceText);
+    if (!Number.isFinite(servicePrice) || servicePrice < 0) {
+        throw createValidationError('Service price must be a valid non-negative number');
+    }
+
+    return {
+        serviceTitle: serviceTitle || 'General Service',
+        serviceDescription: serviceDescription || null,
+        servicePrice,
+    };
+};
+
+exports.registerVendor = async (data, options = {}) => {
     const {
         mobile,
         full_name,
@@ -214,7 +240,11 @@ exports.registerVendor = async (data) => {
     // 2. Find Agent by referral code when a vendor provides one
     // null is returned for the bypass code (SELF_REGISTRATION_BYPASS_CODE) — treated as self-registration
     const agent = normalizedAgentCode ? await exports.validateAgentReferralCode(normalizedAgentCode) : null;
-    const vendorApprovalStatus = agent ? 'approved' : 'pending';
+    const createdByAdmin = Boolean(options.createdByAdmin);
+    const vendorApprovalStatus = createdByAdmin || agent ? 'approved' : 'pending';
+    const vendorIsAvailable = vendorApprovalStatus === 'approved';
+    const serviceApprovalStatus = createdByAdmin ? 'approved' : 'pending';
+    const onboardedService = normalizeOnboardedServiceDetails(data);
 
     if (categories.length > 0) {
         const categoryRecords = await Promise.all(
@@ -264,7 +294,7 @@ exports.registerVendor = async (data) => {
             address,
             latitude,
             longitude,
-            is_available: false,
+            is_available: vendorIsAvailable,
             approval_status: vendorApprovalStatus
         },
         create: {
@@ -280,7 +310,7 @@ exports.registerVendor = async (data) => {
             address,
             latitude,
             longitude,
-            is_available: false,
+            is_available: vendorIsAvailable,
             approval_status: vendorApprovalStatus
         },
         include: {
@@ -301,10 +331,13 @@ exports.registerVendor = async (data) => {
                     },
                     create: categories.map((categoryId) => ({
                         category_id: categoryId,
-                        service_title: 'General Service',
-                        approval_status: 'pending',
-                        status: 'pending',
-                        is_available: false
+                        service_title: onboardedService.serviceTitle,
+                        description: onboardedService.serviceDescription,
+                        price_min: onboardedService.servicePrice,
+                        price_max: onboardedService.servicePrice,
+                        approval_status: serviceApprovalStatus,
+                        status: serviceApprovalStatus,
+                        is_available: serviceApprovalStatus === 'approved'
                     }))
                 }
             }

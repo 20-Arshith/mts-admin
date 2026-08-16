@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Image } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Image, Platform } from 'react-native';
 import { useState, useCallback } from 'react';
 import { vendorService } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -68,7 +68,7 @@ export default function ProfileScreen() {
 
     const businessName = profile?.business_name || profile?.owner_name || 'My Business';
     const agentId = profile?.vendor_id ? `VND-${5000 + profile.vendor_id}` : 'VND-0000';
-    const totalCompleted = profile?.bookings?.filter((b: any) => b.booking_status === 'completed').length || 0;
+    const totalCompleted = profile?.total_completed ?? (profile?.bookings?.filter((b: any) => b.booking_status === 'completed').length || 0);
     const hasRatings = Number(profile?.review_count || 0) > 0 && profile?.rating !== null && profile?.rating !== undefined;
     const ratingLabel = hasRatings ? Number(profile.rating).toFixed(1) : 'No ratings yet';
     const reviewCount = Number(profile?.review_count || 0);
@@ -159,10 +159,21 @@ export default function ProfileScreen() {
 
                 <TouchableOpacity
                     className="flex-row items-center justify-center p-4 bg-red-50 rounded-2xl border border-red-100 mb-10"
-                    onPress={() => navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Auth' }],
-                    })}
+                    onPress={async () => {
+                        await AsyncStorage.removeItem('userToken');
+                        await AsyncStorage.removeItem('userData');
+                        
+                        if (Platform.OS === 'web') {
+                            window.location.reload();
+                        } else {
+                            const parentNav = navigation.getParent();
+                            if (parentNav) {
+                                parentNav.reset({ index: 0, routes: [{ name: 'Auth' }] });
+                            } else {
+                                navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
+                            }
+                        }
+                    }}
                 >
                     <MaterialCommunityIcons name="logout" size={22} color="#EF4444" />
                     <Text className="text-error font-bold text-base ml-2">Log Out</Text>

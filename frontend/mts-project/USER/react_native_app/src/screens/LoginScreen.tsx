@@ -26,6 +26,7 @@ const LoginScreen = ({ navigation }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [resendSeconds, setResendSeconds] = useState(30);
     const [otpError, setOtpError] = useState('');
+    const [loginError, setLoginError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const otpRefs = useRef([]);
 
@@ -48,30 +49,63 @@ const LoginScreen = ({ navigation }) => {
     const handleSendOtp = async () => {
         const val = input.trim();
         setOtpError('');
-        if (!val) return;
+        setLoginError('');
+        if (!val) {
+            setLoginError('Please enter a valid mobile number or email.');
+            return;
+        }
         if (isPhone && val.length < 10) {
-            Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number.');
+            setLoginError('Please enter a valid 10-digit mobile number.');
             return;
         }
         if (!isPhone && !val.includes('@')) {
-            Alert.alert('Invalid Email', 'Please enter a valid email address.');
+            setLoginError('Please enter a valid email address.');
             return;
         }
 
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/auth/send-otp`, {
+            // First call send-otp just to make sure the backend state (if any) is triggered
+            await fetch(`${API_BASE}/auth/send-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contact: val, actorType: 'user' }),
             });
+
+            // Immediately call verify-otp with the default 123456 code to bypass OTP screen
+            const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contact: val, otp: '123456', actorType: 'user' }),
+            });
             const json = await res.json();
-            if (!res.ok) {
-                throw new Error(json.message || 'Failed to send OTP');
+            if (!res.ok || !json.success) {
+                throw new Error(json.message || 'Login failed');
             }
-            setShowOtp(true);
+
+            await saveUserSession(json.token, json.user);
+
+            if (json.registrationRequired) {
+                navigation.replace('EditProfile', {
+                    mode: 'registration',
+                    contact: val,
+                });
+                return;
+            }
+
+            try {
+                const detectedLocation = await detectCurrentLocation();
+                await syncUserLocation(detectedLocation);
+            } catch (locationError) {
+                console.warn('Location was not captured during login', locationError);
+            }
+
+            navigation.replace('Main', {
+                screen: 'Home',
+                params: { autoFetchLocation: true },
+            });
         } catch (e: any) {
-            Alert.alert('Send OTP Failed', e.message || 'Could not send OTP');
+            Alert.alert('Login Failed', e.message || 'Could not sign in');
         } finally {
             setIsLoading(false);
         }
@@ -203,6 +237,12 @@ const LoginScreen = ({ navigation }) => {
                 />
             </View>
 
+            {!!loginError && (
+                <Text style={{ color: '#EF4444', fontSize: 14, marginBottom: 12, textAlign: 'center' }}>
+                    {loginError}
+                </Text>
+            )}
+
             <TouchableOpacity
                 onPress={handleContinue}
                 disabled={isLoading}
@@ -225,6 +265,20 @@ const LoginScreen = ({ navigation }) => {
                     <Text className="text-white font-bold text-base">Continue</Text>
                 )}
             </TouchableOpacity>
+
+            {/* Register link */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 24 }}>
+                <Text style={{ color: '#6B7280', fontSize: 14 }}>{"Don't have an account?  "}</Text>
+                <TouchableOpacity onPress={() => {
+                    if (input.trim()) {
+                        handleContinue();
+                    } else {
+                        setLoginError('Please enter your mobile number above and click Register');
+                    }
+                }}>
+                    <Text style={{ color: '#007BFF', fontWeight: '700', fontSize: 14 }}>Register</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 

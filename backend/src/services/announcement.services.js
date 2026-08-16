@@ -76,6 +76,8 @@ exports.createVendorAnnouncement = async (vendorId, data) => {
     return await announcementRepository.create({
         ...payload,
         vendor_id: vendorId,
+        approval_status: 'pending',
+        status: 'pending',
         start_at: startAt,
         expires_at: payload.expires_at || new Date(startAt.getTime() + DEFAULT_EXPIRY_HOURS * 60 * 60 * 1000),
     });
@@ -96,7 +98,11 @@ exports.updateVendorAnnouncement = async (announcementId, vendorId, data) => {
         throw error;
     }
 
-    const payload = normalizeAnnouncementInput(data, true);
+    const payload = {
+        ...normalizeAnnouncementInput(data, true),
+        approval_status: 'pending',
+        status: 'pending',
+    };
     return await announcementRepository.update(parsedAnnouncementId, payload, 'announcement_id');
 };
 

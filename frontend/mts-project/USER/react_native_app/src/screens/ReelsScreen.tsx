@@ -147,6 +147,11 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
     const whatsappUrl = `whatsapp://send?phone=${cleaned}&text=${message}`;
     const webWhatsappUrl = `https://wa.me/${cleaned}?text=${message}`;
 
+    if (Platform.OS === 'web') {
+      window.open(webWhatsappUrl, '_blank');
+      return;
+    }
+
     Linking.canOpenURL(whatsappUrl)
       .then((supported) => {
         if (supported) {
