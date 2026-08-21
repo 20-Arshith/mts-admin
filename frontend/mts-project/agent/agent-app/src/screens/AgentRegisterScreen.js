@@ -158,7 +158,7 @@ const AgentRegisterScreen = ({ navigation }) => {
                         <View style={styles.cardContainer}>
                             <View style={{ alignItems: 'center', marginBottom: 32 }}>
                                 <Image
-                                    source={require('../../assets/logo.png')}
+                                    source={require('../../assets/logo.jpg')}
                                     style={styles.logo}
                                     resizeMode="contain"
                                 />
@@ -263,7 +263,7 @@ const AgentRegisterScreen = ({ navigation }) => {
                             {/* Logo */}
                             <View style={styles.logoSection}>
                                 <Image
-                                    source={require('../../assets/logo.png')}
+                                    source={require('../../assets/logo.jpg')}
                                     style={styles.logo}
                                     resizeMode="contain"
                                 />

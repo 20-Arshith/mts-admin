@@ -140,7 +140,7 @@ export default function RegisterScreen() {
                     {/* Logo */}
                     <View style={{ alignItems: 'center', marginTop: isCompact ? 28 : 48, marginBottom: 24 }}>
                         <Image
-                            source={require('../../../logo.png')}
+                            source={require('../../../logo.jpg')}
                             style={{ width: logoWidth, height: logoWidth * 0.5 }}
                             resizeMode="contain"
                         />

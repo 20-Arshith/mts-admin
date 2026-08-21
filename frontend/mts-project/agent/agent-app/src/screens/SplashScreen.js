@@ -27,7 +27,7 @@ const SplashScreen = ({ navigation }) => {
             />
             <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                 <Image
-                    source={require('../../assets/logo.png')}
+                    source={require('../../assets/logo.jpg')}
                     style={styles.logo}
                     resizeMode="contain"
                 />

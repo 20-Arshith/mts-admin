@@ -133,7 +133,7 @@ export default function HomeScreen() {
 
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Image source={require('../../assets/logo.png')} style={styles.headerLogo} resizeMode="contain" />
+                    <Image source={require('../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
                     <TouchableOpacity style={styles.locationContainer} onPress={() => setLocationModalVisible(true)}>
                         <MapPin color="#64748b" size={16} />
                         <Text style={styles.locationText} numberOfLines={1}>{locationName}</Text>

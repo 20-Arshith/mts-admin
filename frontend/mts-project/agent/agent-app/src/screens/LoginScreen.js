@@ -151,7 +151,7 @@ const LoginScreen = ({ navigation }) => {
                         <View style={styles.cardContainer}>
                             <View style={styles.logoSection}>
                                 <Image
-                                    source={require('../../assets/logo.png')}
+                                    source={require('../../assets/logo.jpg')}
                                     style={styles.logo}
                                     resizeMode="contain"
                                 />

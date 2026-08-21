@@ -165,7 +165,7 @@ export default function LoginScreen() {
                     {/* Logo */}
                     <View style={{ alignItems: 'center', marginTop: isCompact ? 28 : 48, marginBottom: isCompact ? 24 : 32 }}>
                         <Image
-                            source={require('../../../logo.png')}
+                            source={require('../../../logo.jpg')}
                             style={{ width: logoWidth, height: logoWidth * 0.5 }}
                             resizeMode="contain"
                         />

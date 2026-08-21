@@ -16,7 +16,7 @@ const AboutScreen = ({ navigation }) => {
                 {/* Logo placeholder */}
                 <View className="w-32 h-32 bg-gray-100 rounded-full items-center justify-center p-4 mt-6 mb-4 mt-">
                     <Image
-                        source={require('../../assets/logo.png')}
+                        source={require('../../assets/logo.jpg')}
                         style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
                     />
                 </View>
