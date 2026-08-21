@@ -365,11 +365,11 @@ export default function HomeScreen() {
                 />
             }
         >
-            <View className="bg-white px-4 pb-4" style={{ paddingTop: headerTopPadding }}>
+            <View className="bg-[#01164B] px-4 pb-4" style={{ paddingTop: headerTopPadding }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <View style={{ width: isCompact ? 104 : 122, justifyContent: 'center', flexShrink: 0 }}>
                         <Image
-                            source={require('../../../logo.png')}
+                            source={require('../../../logo.jpeg')}
                             style={{ width: '100%', height: isCompact ? 50 : 58 }}
                             resizeMode="contain"
                         />
@@ -383,10 +383,10 @@ export default function HomeScreen() {
                     disabled={syncingLocation}
                     style={{
                         marginTop: 12,
-                        backgroundColor: '#F8FAFC',
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
                         borderRadius: 16,
                         borderWidth: 1,
-                        borderColor: '#E5E7EB',
+                        borderColor: 'rgba(255, 255, 255, 0.15)',
                         paddingHorizontal: 14,
                         paddingVertical: 12,
                         flexDirection: 'row',
@@ -418,13 +418,13 @@ export default function HomeScreen() {
                         ) : (
                             <>
                                 <Text
-                                    style={{ fontSize: 14, color: '#111827', fontWeight: '700' }}
+                                    style={{ fontSize: 14, color: '#FFFFFF', fontWeight: '700' }}
                                     numberOfLines={1}
                                 >
                                     {deriveShortLocation(vendorData?.address)}
                                 </Text>
                                 <Text
-                                    style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}
+                                    style={{ fontSize: 11, color: '#D1D5DB', marginTop: 2 }}
                                     numberOfLines={1}
                                 >
                                     {vendorData?.address || 'Tap to sync your current location'}
@@ -433,7 +433,7 @@ export default function HomeScreen() {
                         )}
                     </View>
 
-                    {!syncingLocation ? <MaterialIcons name="keyboard-arrow-right" size={20} color="#6B7280" /> : null}
+                    {!syncingLocation ? <MaterialIcons name="keyboard-arrow-right" size={20} color="#9CA3AF" /> : null}
                 </TouchableOpacity>
             </View>
 

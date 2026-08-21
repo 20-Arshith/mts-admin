@@ -349,11 +349,11 @@ const HomeScreen = ({ navigation, route }) => {
             style={{ paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}
         >
             <ScrollView>
-                <View className="bg-white px-4 pt-3 pb-4">
+                <View className="bg-[#01164B] px-4 pt-3 pb-4">
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ width: headerLogoWidth, justifyContent: 'center', flexShrink: 0 }}>
                             <Image
-                                source={require('../../assets/logo.png')}
+                                source={require('../../assets/logo.jpeg')}
                                 style={{ width: '100%', height: headerLogoHeight }}
                                 resizeMode="contain"
                             />
@@ -367,10 +367,10 @@ const HomeScreen = ({ navigation, route }) => {
                         disabled={isFetchingLocation}
                         style={{
                             marginTop: 12,
-                            backgroundColor: '#F8FAFC',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
                             borderRadius: 16,
                             borderWidth: 1,
-                            borderColor: '#E5E7EB',
+                            borderColor: 'rgba(255, 255, 255, 0.15)',
                             paddingHorizontal: 14,
                             paddingVertical: 12,
                             flexDirection: 'row',
@@ -400,7 +400,7 @@ const HomeScreen = ({ navigation, route }) => {
                             ) : (
                                 <>
                                     <Text
-                                        className="text-[14px] text-gray-900 font-semibold"
+                                        className="text-[14px] text-white font-semibold"
                                         numberOfLines={1}
                                         ellipsizeMode="tail"
                                     >
@@ -408,7 +408,7 @@ const HomeScreen = ({ navigation, route }) => {
                                     </Text>
                                     {locationDetail ? (
                                         <Text
-                                            className="text-[11px] text-gray-500 mt-0.5"
+                                            className="text-[11px] text-gray-300 mt-0.5"
                                             numberOfLines={1}
                                             ellipsizeMode="tail"
                                         >
@@ -423,7 +423,7 @@ const HomeScreen = ({ navigation, route }) => {
                             <MaterialIcons
                                 name="keyboard-arrow-right"
                                 size={20}
-                                color="#6B7280"
+                                color="#9CA3AF"
                             />
                         )}
                     </TouchableOpacity>
