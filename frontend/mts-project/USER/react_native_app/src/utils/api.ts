@@ -11,7 +11,7 @@ const api = axios.create({
 
 const isUserProfile = (value: any) => {
     const roleId = Number(value?.role_id ?? value?.role?.role_id);
-    return roleId === 1;
+    return roleId === 1 || roleId === 2;
 };
 
 const hasLocalStorage = () => typeof window !== 'undefined' && Boolean(window.localStorage);
@@ -74,7 +74,7 @@ const getTokenPayload = (token: string | null) => {
 
 const isUserToken = (token: string | null) => {
     const payload = getTokenPayload(token);
-    return Number(payload?.role_id) === 1 && Number(payload?.user_id) > 0;
+    return (Number(payload?.role_id) === 1 || Number(payload?.role_id) === 2) && Number(payload?.user_id) > 0;
 };
 
 const persistUserSession = async (token: string, userRaw?: string | null) => {

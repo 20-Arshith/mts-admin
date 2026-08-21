@@ -2,7 +2,7 @@
   "expo": {
     "name": "MTS VENDORS",
     "slug": "tempVendor",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mtsvendors",
@@ -21,7 +21,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.mytownservice.vendor",
-      "versionCode": 11,
+      "versionCode": 13,
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]
@@ -31,9 +31,6 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/21f7899e-d962-477e-b5bd-b9465e804a02"
     },
     "plugins": [
       [
@@ -68,11 +65,11 @@
     "experiments": {
       "reactCompiler": true
     },
+    "owner": "arshith1",
     "extra": {
       "eas": {
-        "projectId": "338badbb-929b-45ab-b882-3533e7feb153"
+        "projectId": "5ce6f681-b8d8-4f9c-8092-6698304971b2"
       }
-    },
-    "owner": "arshithkakarla"
+    }
   }
 }

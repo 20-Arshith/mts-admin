@@ -2,7 +2,7 @@
   "expo": {
     "name": "MYTOWNSERVICES",
     "slug": "react_native_app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "mytownservices",
@@ -28,16 +28,13 @@
         "VIBRATE"
       ],
       "package": "com.mytownservice.user",
-      "versionCode": 1
+      "versionCode": 5
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/eb5e5b45-d423-4fdb-bd54-915a421f9295"
     },
     "plugins": [
       "expo-font",
@@ -53,11 +50,11 @@
       ],
       "./plugins/withAndroidHttpSupport"
     ],
+    "owner": "arshith1",
     "extra": {
       "eas": {
-        "projectId": "ba1bb462-dee2-4e58-8df0-0f6ab815a3a3"
+        "projectId": "17c8c7c1-de9a-4273-8b95-7453d8879038"
       }
-    },
-    "owner": "arshithkakarla"
+    }
   }
 }

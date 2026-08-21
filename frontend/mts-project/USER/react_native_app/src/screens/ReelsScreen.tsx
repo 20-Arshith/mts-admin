@@ -101,10 +101,18 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   }, [isMuted, player]);
 
   useEffect(() => {
+    let viewTimer: ReturnType<typeof setTimeout>;
+
     if (isActive && isScreenFocused) {
       player.play();
-      onView?.(reel);
-      return;
+      
+      viewTimer = setTimeout(() => {
+        onView?.(reel);
+      }, 3000);
+      
+      return () => {
+        clearTimeout(viewTimer);
+      };
     }
 
     player.pause();
