@@ -19,8 +19,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#01164B",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png"
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "permissions": [
         "POST_NOTIFICATIONS",
@@ -41,7 +40,6 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-monochrome.png",
           "color": "#007BFF",
           "defaultChannel": "mts-default",
           "enableBackgroundRemoteNotifications": false

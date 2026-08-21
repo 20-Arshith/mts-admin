@@ -14,13 +14,12 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#01164B",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png"
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.mytownservice.vendor",
-      "versionCode": 16,
+      "versionCode": 17,
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]
@@ -54,7 +53,6 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
           "color": "#007BFF",
           "defaultChannel": "mts-default"
         }
