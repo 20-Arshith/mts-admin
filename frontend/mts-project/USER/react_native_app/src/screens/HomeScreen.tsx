@@ -353,7 +353,7 @@ const HomeScreen = ({ navigation, route }) => {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ width: headerLogoWidth, justifyContent: 'center', flexShrink: 0 }}>
                             <Image
-                                source={require('../../assets/logo.jpeg')}
+                                source={require('../../assets/logo.jpg')}
                                 style={{ width: '100%', height: headerLogoHeight }}
                                 resizeMode="contain"
                             />
