@@ -54,3 +54,18 @@ exports.removeReel = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getReelStats = async (req, res, next) => {
+    try {
+        const reel = await reelService.getReelStats(req.params.id);
+        res.status(200).json({
+            success: true,
+            data: {
+                id: reel.id,
+                view_count: reel.view_count,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};

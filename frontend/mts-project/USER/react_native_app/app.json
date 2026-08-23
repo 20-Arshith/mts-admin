@@ -2,7 +2,7 @@
   "expo": {
     "name": "MYTOWNSERVICES",
     "slug": "react_native_app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "mytownservices",
@@ -26,7 +26,7 @@
         "VIBRATE"
       ],
       "package": "com.mytownservice.user",
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "favicon": "./assets/favicon.png"

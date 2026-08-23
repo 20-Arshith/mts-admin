@@ -4,7 +4,7 @@ const { ROLES } = require('../utils/constants');
 const requireUserSession = (req) => {
     const userId = Number(req.user?.user_id);
 
-    if (req.user?.role_id !== ROLES.USER || !Number.isInteger(userId) || userId <= 0) {
+    if ((req.user?.role_id !== ROLES.USER && req.user?.role_id !== ROLES.VENDOR) || !Number.isInteger(userId) || userId <= 0) {
         const error = new Error('Please log in with a user account to continue');
         error.statusCode = 401;
         throw error;

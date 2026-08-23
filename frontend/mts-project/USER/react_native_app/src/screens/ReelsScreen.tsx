@@ -82,6 +82,7 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   onClose?: () => void;
 }) {
   const [isMuted, setIsMuted] = useState(true);
+  const hasFiredView = useRef(false);
 
   const vendorName = reel.vendor?.business_name || reel.vendor?.user?.full_name || 'Vendor';
   const serviceName = reel.vendor?.category?.category_name || reel.caption || 'Service';
@@ -106,16 +107,20 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
     if (isActive && isScreenFocused) {
       player.play();
       
-      viewTimer = setTimeout(() => {
-        onView?.(reel);
-      }, 3000);
+      if (!hasFiredView.current) {
+        viewTimer = setTimeout(() => {
+          hasFiredView.current = true;
+          onView?.(reel);
+        }, 3000);
+      }
       
       return () => {
-        clearTimeout(viewTimer);
+        if (viewTimer) clearTimeout(viewTimer);
       };
     }
 
     player.pause();
+    hasFiredView.current = false;
   }, [isActive, isScreenFocused, onView, player, reel]);
 
   const openVendorProfile = () => {
@@ -421,11 +426,6 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
     }
 
     const key = String(reelId);
-    if (viewedReelIds.current.has(key)) {
-      return;
-    }
-
-    viewedReelIds.current.add(key);
 
     try {
       const response = await api.post(`/reels/${reelId}/view`);
@@ -449,6 +449,43 @@ const ReelsScreen = ({ navigation }: { navigation: any }) => {
       console.warn('Failed to update reel view count:', error);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isFocused || reels.length === 0 || currentPage < 0 || currentPage >= reels.length) {
+      return;
+    }
+
+    const activeReel = reels[currentPage];
+    const reelId = getReelId(activeReel);
+    if (!reelId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.get(`/reels/${reelId}/stats`);
+        const nextCount = Number(
+          response.data?.data?.view_count ??
+          response.data?.data?.views ??
+          response.data?.view_count ??
+          response.data?.views
+        );
+        console.log(`[Reel Polling] Reel ID: ${reelId}, Polled Count: ${nextCount}, Previous: ${Number(getReelViewCount(activeReel))}`);
+
+        if (Number.isFinite(nextCount)) {
+          setReels((current) =>
+            current.map((item) =>
+              String(getReelId(item)) === String(reelId) && Number(getReelViewCount(item)) !== nextCount
+                ? { ...item, view_count: nextCount, views: nextCount, viewCount: nextCount }
+                : item
+            )
+          );
+        }
+      } catch (error) {
+        console.error('[Reel Polling Error]', error);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [currentPage, isFocused, reels.length]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
     const firstVisible = viewableItems.find((item) => typeof item.index === 'number');

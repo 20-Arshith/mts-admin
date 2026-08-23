@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 import './App.css';
-import mtsLogo from '../../agent/agent-app/assets/logo.png';
+import mtsLogo from '../../vendor/logo.png';
 import {
   ADMIN_AUTH_EXPIRED_EVENT,
   ADMIN_AUTH_STORAGE_KEY,

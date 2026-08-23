@@ -33,8 +33,6 @@ exports.createReel = async (vendorId, data, file) => {
         caption: data.caption?.trim() || null,
         category_id: data.category_id ? parseInt(data.category_id, 10) : null,
         thumbnail_url: buildVideoThumbnailUrl(uploadResult.public_id),
-        approval_status: 'pending',
-        status: 'pending',
         expiry_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 };
@@ -96,11 +94,7 @@ exports.incrementViewCount = async (reelId) => {
         throw error;
     }
 
-    const reel = await reelRepository.findById(parsedReelId, { 
-        id: true, 
-        approval_status: true, 
-        status: true 
-    });
+    const reel = await reelRepository.findById(parsedReelId);
     if (!reel || reel.approval_status !== 'approved' || reel.status !== 'approved') {
         const error = new Error('Reel not found');
         error.statusCode = 404;
@@ -108,6 +102,23 @@ exports.incrementViewCount = async (reelId) => {
     }
 
     return await reelRepository.incrementViewCount(parsedReelId);
+};
+
+exports.getReelStats = async (reelId) => {
+    const parsedReelId = parseInt(reelId, 10);
+    if (!Number.isInteger(parsedReelId) || parsedReelId <= 0) {
+        const error = new Error('Invalid reel id');
+        error.statusCode = 400;
+        throw error;
+    }
+    
+    const reel = await reelRepository.findById(parsedReelId);
+    if (!reel) {
+        const error = new Error('Reel not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    return reel;
 };
 
 exports.deleteReel = async (reelId, vendorId) => {
