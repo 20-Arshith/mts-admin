@@ -369,7 +369,7 @@ export default function HomeScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <View style={{ width: isCompact ? 104 : 122, justifyContent: 'center', flexShrink: 0 }}>
                         <Image
-                            source={require('../../../logo.jpg')}
+                            source={require('../../../assets/images/logo-header.png')}
                             style={{ width: '100%', height: isCompact ? 50 : 58 }}
                             resizeMode="contain"
                         />

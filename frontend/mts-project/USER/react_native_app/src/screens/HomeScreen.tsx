@@ -92,6 +92,7 @@ const HomeScreen = ({ navigation, route }) => {
         distanceKm: number | null;
         color: string;
         imageUrl?: string | null;
+        categoryIcon?: string | null;
     }>>([]);
     const headerLogoWidth = Math.min(Math.max(screenWidth * 0.27, 92), 132);
     const headerLogoHeight = Math.min(Math.max(headerLogoWidth * 0.52, 40), 62);
@@ -190,7 +191,7 @@ const HomeScreen = ({ navigation, route }) => {
         },
     ];
 
-    const [categories, setCategories] = useState<Array<{ icon: string; label: string; color: string; id?: number }>>([
+    const [categories, setCategories] = useState<Array<{ icon: string; label: string; color: string; id?: number; icon_name?: string; }>>([
         { icon: 'water-drop', label: 'Plumbing', color: '#26C6DA' },
         { icon: 'bolt', label: 'Electrician', color: '#FFA726' },
         { icon: 'handyman', label: 'Carpenter', color: '#78909C' },
@@ -353,7 +354,7 @@ const HomeScreen = ({ navigation, route }) => {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ width: headerLogoWidth, justifyContent: 'center', flexShrink: 0 }}>
                             <Image
-                                source={require('../../assets/logo.jpg')}
+                                source={require('../../assets/logo-header.png')}
                                 style={{ width: '100%', height: headerLogoHeight }}
                                 resizeMode="contain"
                             />

@@ -81,7 +81,7 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
   onView?: (reel: any) => void;
   onClose?: () => void;
 }) {
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const hasFiredView = useRef(false);
 
   const vendorName = reel.vendor?.business_name || reel.vendor?.user?.full_name || 'Vendor';
@@ -92,7 +92,7 @@ const ReelFeedItem = React.memo(function ReelFeedItem({
     { uri: getReelVideoUrl(reel) },
     (videoPlayer) => {
       videoPlayer.loop = true;
-      videoPlayer.muted = true;
+      videoPlayer.muted = false;
       videoPlayer.showNowPlayingNotification = false;
     }
   );

@@ -1,7 +1,7 @@
 {
   "name": "tempvendor",
   "main": "App.tsx",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "scripts": {
     "start": "set \"EXPO_NO_DEPENDENCY_VALIDATION=true\" && expo start --lan --port 8084",
     "reset-project": "node ./scripts/reset-project.js",

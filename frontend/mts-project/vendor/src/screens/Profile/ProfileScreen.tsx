@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, CommonActions } from '@react-navigation/native';
 import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator, Image, Platform } from 'react-native';
 import { useState, useCallback } from 'react';
 import { vendorService } from '../../services/api';
@@ -166,12 +166,12 @@ export default function ProfileScreen() {
                         if (Platform.OS === 'web') {
                             window.location.reload();
                         } else {
-                            const parentNav = navigation.getParent();
-                            if (parentNav) {
-                                parentNav.reset({ index: 0, routes: [{ name: 'Auth' }] });
-                            } else {
-                                navigation.reset({ index: 0, routes: [{ name: 'Auth' }] });
-                            }
+                            navigation.dispatch(
+                                CommonActions.reset({
+                                    index: 0,
+                                    routes: [{ name: 'Auth' }],
+                                })
+                            );
                         }
                     }}
                 >
