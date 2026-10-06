@@ -14,7 +14,17 @@
       "backgroundColor": "#01164B"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mytownservice.agent",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "MTS Agent needs your location to track your deliveries and assign you nearby jobs.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MTS Agent needs your location in the background to track active deliveries even when the app is minimized.",
+        "NSLocationAlwaysUsageDescription": "MTS Agent needs your location at all times to ensure accurate delivery tracking.",
+        "NSCameraUsageDescription": "MTS Agent needs camera access to scan QR codes and take proof-of-delivery photos.",
+        "NSPhotoLibraryUsageDescription": "MTS Agent needs photo library access to upload proof-of-delivery images.",
+        "NSUserNotificationsUsageDescription": "MTS Agent needs to send you notifications for new delivery assignments and updates."
+      }
     },
     "android": {
       "adaptiveIcon": {

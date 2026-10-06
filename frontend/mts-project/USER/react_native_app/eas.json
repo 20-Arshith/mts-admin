@@ -32,6 +32,10 @@
         "buildType": "app-bundle",
         "credentialsSource": "local"
       },
+      "ios": {
+        "buildType": "release",
+        "credentialsSource": "remote"
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "http://54.147.40.109/",
         "NODE_ENV": "production"
@@ -39,6 +43,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "YOUR_APPLE_ID@email.com",
+        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
+        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+      }
+    }
   }
 }
